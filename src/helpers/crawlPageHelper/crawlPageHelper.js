@@ -27,7 +27,7 @@ const crawlPageHelper = (url) => {
     return;
   }
   const wgetCommand = `wget -q ${OPTIONS.SHOW_PROGRESS_BAR}--recursive `
-    + '--header="X-Forwarded-Proto: https" '
+    + `${OPTIONS.X_FORWARDED_PROTO}`
     + '--timestamping '
     + '--page-requisites '
     + '--no-parent '

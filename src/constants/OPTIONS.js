@@ -18,6 +18,7 @@ const PRODUCTION_DOMAIN = (argv.productionDomain || argv.url || SOURCE_DOMAIN).r
 const IGNORE_ABSOLUTE_PATHS = argv.ignoreAbsolutePaths || false;
 const STATIC_DIRECTORY = argv.dest || 'static';
 const SAVE_AS_REFERER = argv.saveAsReferer || false;
+const X_FORWARDED_PROTO = argv['avoid-https'] ? '--header="X-Forwarded-Proto: https" ' : '';
 
 const shouldShowProgress = () => {
   if (argv.silent) {
@@ -56,6 +57,8 @@ const OPTIONS = {
   // --save-as-referer flag will save redirected assets using the
   // original url path instead of the redirected destination url
   SAVE_AS_REFERER,
+  // --avoid-https will avoid redirects to https by setting X-Forwarded-Proto to https
+  X_FORWARDED_PROTO,
 };
 
 module.exports = OPTIONS;
