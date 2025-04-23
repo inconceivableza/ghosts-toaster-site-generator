@@ -33,8 +33,8 @@ const crawlPageAsyncHelper = (
     + '--page-requisites '
     + '--no-parent '
     + '--no-host-directories '
-    + '--restrict-file-name=unix '
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? `--plugin-script ${OPTIONS.PLUGIN_SCRIPT} ` : '')
+    + '--restrict-file-names=unix '
     + `--directory-prefix ${OPTIONS.STATIC_DIRECTORY} ${contentOnError()} `
     + `${saveAsReferer()}`
     + `${url}`;
