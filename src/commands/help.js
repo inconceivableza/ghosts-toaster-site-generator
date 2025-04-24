@@ -4,6 +4,8 @@ const { hideBin } = require('yargs/helpers');
 
 // note that camel-case --oneTwoThree is interchangeable with hyphenated --one-two-three
 const { argv } = yargs(hideBin(process.argv))
+    .usage('$0', 'ghost static site generator: ' +
+                 'Generate a static site from ghost and deploy using a CI')
     .alias('sourceDomain', 'domain')
     .describe('sourceDomain', 'set the source URL that will be mirrored')
     .option('sourceDomain', {'type': 'string', 'default': 'http://localhost:2368'})
