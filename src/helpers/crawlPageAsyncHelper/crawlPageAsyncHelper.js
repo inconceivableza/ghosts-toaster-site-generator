@@ -33,6 +33,8 @@ const crawlPageAsyncHelper = (
     + '--page-requisites '
     + '--no-parent '
     + '--no-host-directories '
+    + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? '--no-robots ' : '')
+    + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? '--sitemaps ' : '')
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? `--plugin-script ${OPTIONS.PLUGIN_SCRIPT} ` : '')
     + '--restrict-file-names=unix '
     + `--directory-prefix ${OPTIONS.STATIC_DIRECTORY} ${contentOnError()} `
