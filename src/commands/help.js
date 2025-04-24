@@ -19,6 +19,8 @@ const { argv } = yargs(hideBin(process.argv))
     .describe('preview', 'generate the site and then open in a new browser window. ignores productionDomain')
     .describe('silent', 'hide wget output')
     .describe('failOnError', 'output the failed wget command and also any errors before exiting')
+    .describe('avoidHttps', 'avoid redirects to https when retrieving urls')
+    .describe('useWpull', 'use wpull rather than wget, and remap productionDomain urls to sourceDomain')
     .help();
 
 parse();

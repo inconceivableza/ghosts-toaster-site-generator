@@ -18,8 +18,8 @@ const PRODUCTION_DOMAIN = (argv.productionDomain || argv.url || SOURCE_DOMAIN).r
 const IGNORE_ABSOLUTE_PATHS = argv.ignoreAbsolutePaths || false;
 const STATIC_DIRECTORY = argv.dest || 'static';
 const SAVE_AS_REFERER = argv.saveAsReferer || false;
-const X_FORWARDED_PROTO = argv['avoid-https'] ? '--header="X-Forwarded-Proto: https" ' : '';
-const USE_WPULL = argv['use-wpull'] || false;
+const X_FORWARDED_PROTO = argv.avoidHttps ? '--header="X-Forwarded-Proto: https" ' : '';
+const USE_WPULL = argv.useWpull || false;
 const MIRROR_COMMAND = USE_WPULL ? 'wpull' : 'wget';
 
 const shouldShowProgress = () => {
