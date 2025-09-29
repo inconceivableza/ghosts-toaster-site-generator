@@ -3,7 +3,8 @@ const OPTIONS = require('../../constants/OPTIONS');
 
 /**
  * This function replaces all the urls with the replacement url specified with
- * the --url flag
+ * the --url flag. Enhanced to handle protocol-relative URLs, different protocols,
+ * and escaped characters.
  */
 const replaceDomainWithUrlHelper = (
   output,
@@ -12,10 +13,44 @@ const replaceDomainWithUrlHelper = (
 ) => {
   // Some users may want to host files under a sub directory
   const { subDir } = argv;
-  return `${output}`.replace(
-    new RegExp(domain, 'g'),
-    subDir ? `${url}/${subDir}` : url,
+  const targetUrl = subDir ? `${url}/${subDir}` : url;
+
+  // Extract domain without protocol for more flexible matching
+  const sourceDomainWithoutProtocol = domain.replace(/^https?:\/\//, '');
+  const targetDomainWithoutProtocol = targetUrl.replace(/^https?:\/\//, '');
+
+  let result = `${output}`;
+
+  // Replace exact domain matches (with protocol)
+  result = result.replace(new RegExp(escapeRegex(domain), 'gi'), targetUrl);
+
+  // Replace protocol-relative URLs (//domain)
+  result = result.replace(
+    new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'),
+    `//${targetDomainWithoutProtocol}`
   );
+
+  // Replace domain in various contexts (with and without protocols)
+  const domainVariations = [
+    `https://${sourceDomainWithoutProtocol}`,
+    `http://${sourceDomainWithoutProtocol}`,
+    sourceDomainWithoutProtocol
+  ];
+
+  domainVariations.forEach(variation => {
+    if (variation !== domain) { // Avoid double replacement
+      result = result.replace(new RegExp(escapeRegex(variation), 'gi'), targetUrl);
+    }
+  });
+
+  return result;
 };
+
+/**
+ * Escapes special regex characters in a string
+ */
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 module.exports = replaceDomainWithUrlHelper;

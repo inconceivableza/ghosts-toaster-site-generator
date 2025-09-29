@@ -9,11 +9,15 @@ const replaceUrlWithSubDirPathHelper = require('../replaceUrlWithSubDirPathHelpe
 const convertDomainToRelativeHelper = require('../convertDomainToRelativeHelper');
 const removeAllUrlsHelper = require('../removeAllUrlsHelper');
 const replaceXmlUrlsHelper = require('../replaceXmlUrlsHelper');
+const replaceJavaScriptUrlsHelper = require('../replaceJavaScriptUrlsHelper');
+const replaceCssUrlsHelper = require('../replaceCssUrlsHelper');
+const replaceMetaTagsHelper = require('../replaceMetaTagsHelper');
+const replaceSrcsetHelper = require('../replaceSrcsetHelper');
 
 const { argv } = yargs(hideBin(process.argv));
 
 /**
- * This function replaces url and domain names
+ * This function replaces url and domain names using specialized helpers for different content types
  *
  * @param {string} directory - directory where the static site is located
  * @param {string} replaceUrl - url to replace with
@@ -27,13 +31,43 @@ const replaceDomainNameHelper = (
   const { subDir } = argv;
   const filePath = path.join(directory, file);
   const fileContents = fs.readFileSync(filePath, 'utf8');
-  const output = compose(
+
+  // Apply content-type specific transformations based on file extension
+  const fileExtension = path.extname(file).toLowerCase();
+
+  let transformationPipeline = [
     replaceXmlUrlsHelper(file),
     removeAllUrlsHelper,
     replaceDomainWithUrlHelper,
     convertDomainToRelativeHelper(subDir, filePath),
     replaceUrlWithSubDirPathHelper,
-  )(
+  ];
+
+  // Add specialized transformations for specific file types
+  if (fileExtension === '.html' || fileExtension === '.htm') {
+    transformationPipeline = [
+      replaceMetaTagsHelper,
+      replaceSrcsetHelper,
+      ...transformationPipeline,
+    ];
+  }
+
+  if (fileExtension === '.js') {
+    transformationPipeline = [
+      replaceJavaScriptUrlsHelper,
+      ...transformationPipeline,
+    ];
+  }
+
+  if (fileExtension === '.css') {
+    transformationPipeline = [
+      replaceCssUrlsHelper,
+      ...transformationPipeline,
+    ];
+  }
+
+  // Apply all transformations in sequence
+  const output = compose(...transformationPipeline)(
     fileContents,
     subDir,
     filePath,
