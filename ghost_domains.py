@@ -261,7 +261,7 @@ class GhostDomainsPlugin(WpullPlugin):
 
         # Transform content based on type
         if hasattr(item_session.response.body, 'content') and item_session.response.body.content:
-            original_content = item_session.response.body.content
+            original_content = item_session.response.body.content()
             transformed_content = self._transform_content_by_type(
                 original_content,
                 content_type,
@@ -270,7 +270,10 @@ class GhostDomainsPlugin(WpullPlugin):
 
             # Update the response body if content was transformed
             if transformed_content != original_content:
-                item_session.response.body.content = transformed_content
+                # this rewrites the saved data
+                item_session.response.body.file.seek(0)
+                item_session.response.body.file.write(transformed_content)
+                item_session.response.body._content_data = transformed_content
                 self.logger.info(f'Real-time transformation applied to {item_session.request.url}')
 
         return Actions.NORMAL
