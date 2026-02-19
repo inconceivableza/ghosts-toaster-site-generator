@@ -20,6 +20,7 @@ class GhostDomainsPlugin(WpullPlugin):
     logger = logging.getLogger('wpull.plugin.ghost_domains') # this has to start with wpull or the logging will be filtered
     SOURCE_DOMAIN = os.environ.get('SOURCE_DOMAIN')
     PRODUCTION_DOMAIN = os.environ.get('PRODUCTION_DOMAIN')
+    ALT_DOMAINS = os.environ.get('ALT_DOMAINS', '').split()
 
     def __init__(self):
         super().__init__()
@@ -37,6 +38,8 @@ class GhostDomainsPlugin(WpullPlugin):
             self.logger.warn(f"Did not find PRODUCTION_DOMAIN in environment; will not remap ghost production urls")
         if self.SOURCE_DOMAIN and self.PRODUCTION_DOMAIN:
             self.logger.info(f"Will remap {self.PRODUCTION_DOMAIN} to {self.SOURCE_DOMAIN}")
+        if self.ALT_DOMAINS:
+            self.logger.info(f"Will remap any of {self.ALT_DOMAINS} to {self.SOURCE_DOMAIN}")
 
     def deactivate(self):
         super().deactivate()
@@ -246,6 +249,12 @@ class GhostDomainsPlugin(WpullPlugin):
                 self.logger.info(f'Not retrieving ghost admin interface url: {item_session.request.url}')
                 return False
             return True
+        for alt_domain in self.ALT_DOMAINS:
+            if item_session.request.url.startswith(alt_domain):
+                adjusted_url = item_session.request.url.replace(alt_domain, self.SOURCE_DOMAIN, 1)
+                item_session.request.url = adjusted_url
+                self.logger.info(f'Alt domain remap: rather than retrieving {item_session.request.url}, will retrieve {adjusted_url}')
+                return True
         return False
 
     @hook(PluginFunctions.handle_response)

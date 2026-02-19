@@ -32,6 +32,7 @@ const crawlPageHelper = (url) => {
     + '--page-requisites '
     + '--no-parent '
     + '--no-host-directories '
+    + ((OPTIONS.MIRROR_COMMAND === 'wpull' && OPTIONS.ALT_DOMAINS.length) ? `--span-hosts --hostnames ${OPTIONS.ALT_DOMAINS.join(',')} ` : '')
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? '--no-robots ' : '')
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? '--sitemaps ' : '')
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? `--plugin-script ${OPTIONS.PLUGIN_SCRIPT} ` : '')
@@ -43,7 +44,7 @@ const crawlPageHelper = (url) => {
   try {
     console.log(`Fetching: ${url}`);
     // the SOURCE_DOMAIN and PRODUCTION_DOMAIN are passed to the wpull ghost_domains plugin using environment variables
-    const env = { ...process.env, SOURCE_DOMAIN: OPTIONS.SOURCE_DOMAIN, PRODUCTION_DOMAIN: OPTIONS.PRODUCTION_DOMAIN};
+    const env = { ...process.env, SOURCE_DOMAIN: OPTIONS.SOURCE_DOMAIN, PRODUCTION_DOMAIN: OPTIONS.PRODUCTION_DOMAIN, ALT_DOMAINS: OPTIONS.ALT_DOMAINS};
     execSync(
       wgetCommand,
       { env, stdio: 'inherit' },

@@ -15,6 +15,7 @@ const SOURCE_DOMAIN = (argv.sourceDomain || argv.domain || 'http://localhost:236
  * @type {string}
  */
 const PRODUCTION_DOMAIN = (argv.productionDomain || argv.url || SOURCE_DOMAIN).replace(/\/?$/, '');
+const ALT_DOMAINS = (argv.altDomains || '').split(',').filter(e => e.trim() !== '');
 const IGNORE_ABSOLUTE_PATHS = argv.ignoreAbsolutePaths || false;
 const STATIC_DIRECTORY = argv.dest || 'static';
 const SAVE_AS_REFERER = argv.saveAsReferer || false;
@@ -52,6 +53,8 @@ const OPTIONS = {
   // This is the --url flag without http:// or https://
   PRODUCTION_DOMAIN_WITHOUT_PROTOCOL: PRODUCTION_DOMAIN.replace(/^https?:\/\//i, ''),
   PRODUCTION_DOMAIN_PLAIN: PRODUCTION_DOMAIN.replace(/^https?:\/\//i, '').replace(/:[0-9]+$/, ''),
+  // Other domains to search and replace
+  ALT_DOMAINS: ALT_DOMAINS,
   // The --silent flag determines if we should show the progress bar or not
   SHOW_PROGRESS_BAR: shouldShowProgress()
     ? '--show-progress '
