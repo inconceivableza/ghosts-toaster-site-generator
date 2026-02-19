@@ -93,7 +93,7 @@ class GhostDomainsPlugin(WpullPlugin):
         content = re.sub(r'srcset=["\']([^"\']+)["\']', replace_srcset, content, flags=re.IGNORECASE)
         content = re.sub(r'data-srcset=["\']([^"\']+)["\']', replace_srcset, content, flags=re.IGNORECASE)
 
-        for source_domain_search in source_domain_searches:
+        for source_domain_search in self.source_domain_searches:
             # Replace JSON-LD structured data URLs
             content = re.sub(
                 rf'(<script[^>]*type=["\']application/ld\+json["\'][^>]*>[^<]*)({source_domain_search})([^<]*</script>)',
