@@ -29,7 +29,7 @@ const crawlPageAsyncHelper = (
 ) => {
   const wgetCommand = `${OPTIONS.MIRROR_COMMAND} -v ${OPTIONS.SHOW_PROGRESS_BAR}--recursive `
     + `${OPTIONS.X_FORWARDED_PROTO}`
-    + '--timestamping '
+    // + '--timestamping ' // temporarily disable timestamping as not all urls being retrieved
     + '--page-requisites '
     + '--no-parent '
     + '--no-host-directories '
