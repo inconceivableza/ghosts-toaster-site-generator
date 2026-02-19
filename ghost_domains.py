@@ -21,6 +21,7 @@ class GhostDomainsPlugin(WpullPlugin):
     SOURCE_DOMAIN = os.environ.get('SOURCE_DOMAIN')
     PRODUCTION_DOMAIN = os.environ.get('PRODUCTION_DOMAIN')
     ALT_DOMAINS = os.environ.get('ALT_DOMAINS', '').split()
+    SOURCE_DOMAINS = [SOURCE_DOMAIN] + ALT_DOMAINS
 
     def __init__(self):
         super().__init__()
@@ -29,6 +30,8 @@ class GhostDomainsPlugin(WpullPlugin):
         if self.SOURCE_DOMAIN and self.PRODUCTION_DOMAIN:
             self.source_domain_without_protocol = re.sub(r'^https?://', '', self.SOURCE_DOMAIN)
             self.production_domain_without_protocol = re.sub(r'^https?://', '', self.PRODUCTION_DOMAIN)
+        self.source_domains = [re.sub(r'^https?://', '', source_domain) for source_domain in self.SOURCE_DOMAINS]
+        self.source_domain_searches = [rf'(https?:)?//{self._escape_regex(source_domain)}' for source_domain in self.SOURCE_DOMAINS]
 
     def activate(self):
         super().activate()
@@ -52,27 +55,27 @@ class GhostDomainsPlugin(WpullPlugin):
         """Transform HTML content to replace URLs in various contexts"""
         if not self.SOURCE_DOMAIN or not self.PRODUCTION_DOMAIN:
             return content
+        for source_domain_search in self.source_domain_searches:
+            # Replace canonical URLs
+            content = re.sub(
+                rf'(<link[^>]+rel=["\']canonical["\'][^>]+href=["\'])(.*?)({source_domain_search})(.*?)(["\'][^>]*>)',
+                rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
+                content, flags=re.IGNORECASE
+            )
 
-        # Replace canonical URLs
-        content = re.sub(
-            rf'(<link[^>]+rel=["\']canonical["\'][^>]+href=["\'])(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)(["\'][^>]*>)',
-            rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
-            content, flags=re.IGNORECASE
-        )
+            # Replace Open Graph URLs
+            content = re.sub(
+                rf'(<meta[^>]+property=["\']og:[^"\']*["\'][^>]+content=["\'])(.*?)({source_domain_search)})(.*?)(["\'][^>]*>)',
+                rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
+                content, flags=re.IGNORECASE
+            )
 
-        # Replace Open Graph URLs
-        content = re.sub(
-            rf'(<meta[^>]+property=["\']og:[^"\']*["\'][^>]+content=["\'])(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)(["\'][^>]*>)',
-            rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
-            content, flags=re.IGNORECASE
-        )
-
-        # Replace Twitter Card URLs
-        content = re.sub(
-            rf'(<meta[^>]+name=["\']twitter:[^"\']*["\'][^>]+content=["\'])(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)(["\'][^>]*>)',
-            rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
-            content, flags=re.IGNORECASE
-        )
+            # Replace Twitter Card URLs
+            content = re.sub(
+                rf'(<meta[^>]+name=["\']twitter:[^"\']*["\'][^>]+content=["\'])(.*?)({source_domain_search)})(.*?)(["\'][^>]*>)',
+                rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
+                content, flags=re.IGNORECASE
+            )
 
         # Replace srcset attributes
         def replace_srcset(match):
@@ -80,7 +83,8 @@ class GhostDomainsPlugin(WpullPlugin):
             updated_srcset = []
             for source in srcset_value.split(','):
                 source = source.strip()
-                source = re.sub(self._escape_regex(self.SOURCE_DOMAIN), self.PRODUCTION_DOMAIN, source, flags=re.IGNORECASE)
+                for source_domain_search in self.source_domain_searches:
+                    source = re.sub(self._escape_regex(source_domain_search), self.PRODUCTION_DOMAIN, source, flags=re.IGNORECASE)
                 source = re.sub(f'//{self._escape_regex(self.source_domain_without_protocol)}',
                                f'//{self.production_domain_without_protocol}', source, flags=re.IGNORECASE)
                 updated_srcset.append(source)
@@ -89,26 +93,28 @@ class GhostDomainsPlugin(WpullPlugin):
         content = re.sub(r'srcset=["\']([^"\']+)["\']', replace_srcset, content, flags=re.IGNORECASE)
         content = re.sub(r'data-srcset=["\']([^"\']+)["\']', replace_srcset, content, flags=re.IGNORECASE)
 
-        # Replace JSON-LD structured data URLs
-        content = re.sub(
-            rf'(<script[^>]*type=["\']application/ld\+json["\'][^>]*>[^<]*)({self._escape_regex(self.SOURCE_DOMAIN)})([^<]*</script>)',
-            rf'\1{self.PRODUCTION_DOMAIN}\3',
-            content, flags=re.IGNORECASE
-        )
+        for source_domain_search in source_domain_searches:
+            # Replace JSON-LD structured data URLs
+            content = re.sub(
+                rf'(<script[^>]*type=["\']application/ld\+json["\'][^>]*>[^<]*)({source_domain_search})([^<]*</script>)',
+                rf'\1{self.PRODUCTION_DOMAIN}\3',
+                content, flags=re.IGNORECASE
+            )
 
-        # Replace RSS/Atom feed links
-        content = re.sub(
-            rf'(<link[^>]+type=["\']application/(?:rss|atom)\+xml["\'][^>]+href=["\'])(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)(["\'][^>]*>)',
-            rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
-            content, flags=re.IGNORECASE
-        )
+            # Replace RSS/Atom feed links
+            content = re.sub(
+                rf'(<link[^>]+type=["\']application/(?:rss|atom)\+xml["\'][^>]+href=["\'])(.*?)({source_domain_search})(.*?)(["\'][^>]*>)',
+                rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
+                content, flags=re.IGNORECASE
+            )
 
         # Replace protocol-relative URLs (only those that actually start with //)
-        content = re.sub(
-            rf'(<(?:meta|link)[^>]+(?:content|href)=["\'])(//{self._escape_regex(self.source_domain_without_protocol)})([^"\']*["\'][^>]*>)',
-            rf'\1//{self.production_domain_without_protocol}\3',
-            content, flags=re.IGNORECASE
-        )
+        for source_domain in self.source_domains:
+            content = re.sub(
+                rf'(<(?:meta|link)[^>]+(?:content|href)=["\'])(//{self._escape_regex(source_domain)})([^"\']*["\'][^>]*>)',
+                rf'\1//{self.production_domain_without_protocol}\3',
+                content, flags=re.IGNORECASE
+            )
 
         return content
 
