@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 const replaceDomainWithUrlHelper = require('../replaceDomainWithUrlHelper');
+const OPTIONS = require('../../../constants/OPTIONS');
 
 // Mock OPTIONS
 jest.mock('../../../constants/OPTIONS', () => ({
@@ -106,5 +107,33 @@ describe('replaceDomainWithUrlHelper', () => {
 
     const result = replaceDomainWithUrlHelper(input, sourceDomain, productionDomain);
     expect(result).toBe(expected);
+  });
+
+  describe('with ALT_DOMAINS', () => {
+    beforeEach(() => {
+      OPTIONS.ALT_DOMAINS = ['http://alt.example.com:2368'];
+    });
+
+    afterEach(() => {
+      OPTIONS.ALT_DOMAINS = [];
+    });
+
+    it('should replace alt domain URLs with the production domain', () => {
+      const input = '<a href="http://alt.example.com:2368/post">Link</a>';
+      const result = replaceDomainWithUrlHelper(input, sourceDomain, productionDomain);
+      expect(result).toBe('<a href="https://www.example.com/post">Link</a>');
+    });
+
+    it('should replace protocol-relative alt domain URLs', () => {
+      const input = '<a href="//alt.example.com:2368/post">Link</a>';
+      const result = replaceDomainWithUrlHelper(input, sourceDomain, productionDomain);
+      expect(result).toContain('www.example.com');
+    });
+
+    it('should replace https variation of alt domain', () => {
+      const input = '<a href="https://alt.example.com:2368/post">Link</a>';
+      const result = replaceDomainWithUrlHelper(input, sourceDomain, productionDomain);
+      expect(result).toBe('<a href="https://www.example.com/post">Link</a>');
+    });
   });
 });

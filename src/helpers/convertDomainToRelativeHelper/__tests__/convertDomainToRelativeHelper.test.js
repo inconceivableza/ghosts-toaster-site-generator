@@ -40,4 +40,9 @@ describe('convertDomainToRelativeHelper', () => {
     ))
       .toEqual(result);
   });
+
+  it('should return output unchanged when subDir is falsy', () => {
+    const mockOutput = '<img src="https://example.com/image.jpg">';
+    expect(convertDomainToRelativeHelper(null)(mockOutput)).toBe(mockOutput);
+  });
 });

@@ -31,6 +31,12 @@ describe('replaceDomainNameHelper', () => {
     '/static/https.html': {
       contents: 'src="https://localhost:2742/content/someImage.jpg"',
     },
+    '/static/script.js': {
+      contents: 'const url = "https://localhost:2742/api/endpoint";',
+    },
+    '/static/styles.css': {
+      contents: '.bg { background-image: url(https://localhost:2742/content/images/bg.jpg); }',
+    },
   };
 
   beforeEach(() => {
@@ -66,5 +72,29 @@ describe('replaceDomainNameHelper', () => {
         '/static/https.html',
         'src="./content/someImage.jpg"',
       );
+  });
+
+  it('should process .js files and call writeFileSync', () => {
+    const fileHandler = replaceDomainNameHelper(
+      '/static/',
+      'https://www.anothersite.com',
+    );
+
+    fileHandler('script.js');
+
+    expect(fs.writeFileSync)
+      .toHaveBeenCalledWith('/static/script.js', expect.any(String));
+  });
+
+  it('should process .css files and call writeFileSync', () => {
+    const fileHandler = replaceDomainNameHelper(
+      '/static/',
+      'https://www.anothersite.com',
+    );
+
+    fileHandler('styles.css');
+
+    expect(fs.writeFileSync)
+      .toHaveBeenCalledWith('/static/styles.css', expect.any(String));
   });
 });

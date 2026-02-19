@@ -150,6 +150,11 @@ describe('replaceUrlWithSubDirPathHelper', () => {
     expect(expected).toEqual(result);
   });
 
+  it('should return output unchanged when subDir is falsy', () => {
+    const mockOutput = '<img src="/image.jpg">';
+    expect(replaceUrlWithSubDirPathHelper(mockOutput, '')).toBe(mockOutput);
+  });
+
   it('should not replace urls with protocols or domains', () => {
     const mockOutput = `
 <meta name="twitter:url" content="http://localhost:8080/" />
