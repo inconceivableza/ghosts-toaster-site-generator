@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 const replaceDomainWithUrlHelper = require('../replaceDomainWithUrlHelper');
 const OPTIONS = require('../../../constants/OPTIONS');
+const yargs = require('yargs');
 
 // Mock OPTIONS
 jest.mock('../../../constants/OPTIONS', () => ({
@@ -107,6 +108,22 @@ describe('replaceDomainWithUrlHelper', () => {
 
     const result = replaceDomainWithUrlHelper(input, sourceDomain, productionDomain);
     expect(result).toBe(expected);
+  });
+
+  describe('with subDir set', () => {
+    beforeEach(() => {
+      yargs.argv.subDir = 'my-subdir';
+    });
+
+    afterEach(() => {
+      delete yargs.argv.subDir;
+    });
+
+    it('should append subDir to the target URL', () => {
+      const input = `<a href="${sourceDomain}/post">Link</a>`;
+      const result = replaceDomainWithUrlHelper(input, sourceDomain, productionDomain);
+      expect(result).toBe(`<a href="${productionDomain}/my-subdir/post">Link</a>`);
+    });
   });
 
   describe('with ALT_DOMAINS', () => {

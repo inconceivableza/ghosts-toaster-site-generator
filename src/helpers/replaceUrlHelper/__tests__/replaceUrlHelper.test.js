@@ -44,6 +44,12 @@ describe('replaceUrlHelper', () => {
     expect(fs.readdirSync).toHaveBeenCalledTimes(2);
   });
 
+  it('should work with default parameters when called without arguments', () => {
+    fs.readdirSync.mockReturnValue([]);
+
+    expect(() => replaceUrlHelper()).not.toThrow();
+  });
+
   it('should not process non-matching files', () => {
     fs.readdirSync.mockReturnValue(['style.css', 'app.js', 'image.png']);
     fs.lstatSync.mockReturnValue({ isDirectory: () => false });

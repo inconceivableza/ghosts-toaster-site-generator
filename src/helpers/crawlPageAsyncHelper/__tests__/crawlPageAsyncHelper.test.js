@@ -102,6 +102,26 @@ describe('crawlPageAsyncHelper', () => {
     consoleSpy.mockRestore();
   });
 
+  it('should call process.exit(1) when failOnError is set and exec throws synchronously', () => {
+    jest.resetModules();
+    mockExec = jest.fn();
+    mockExecSync = jest.fn().mockReturnValue(Buffer.from(''));
+    const mockError = new Error('exec failed');
+    mockError.stdout = 'some output';
+    mockExec.mockImplementationOnce(() => { throw mockError; });
+    jest.doMock('child_process', () => ({ exec: mockExec, execSync: mockExecSync }));
+    jest.doMock('../../../constants/OPTIONS', () => ({ ...mockOptions }));
+    jest.doMock('yargs', () => ({ argv: { failOnError: true } }));
+    crawlPageAsyncHelper = require('../crawlPageAsyncHelper');
+
+    const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    crawlPageAsyncHelper('http://localhost:2368/post');
+    expect(mockExit).toHaveBeenCalledWith(1);
+    mockExit.mockRestore();
+    jest.spyOn(console, 'log').mockRestore();
+  });
+
   it('should include wpull-specific flags when MIRROR_COMMAND is wpull', () => {
     jest.resetModules();
     mockExec = jest.fn();

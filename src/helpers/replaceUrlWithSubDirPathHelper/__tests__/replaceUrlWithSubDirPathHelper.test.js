@@ -155,6 +155,14 @@ describe('replaceUrlWithSubDirPathHelper', () => {
     expect(replaceUrlWithSubDirPathHelper(mockOutput, '')).toBe(mockOutput);
   });
 
+  it('should use "." as relative prefix for root-level files (filePath at static root)', () => {
+    const mockOutput = '<link href="/style.css">';
+    const mockSubDir = '/deploy-folder';
+    // filePath='/static' → numberOfLevels=1 → relativePathPrefix='./' → set to '.'
+    const result = replaceUrlWithSubDirPathHelper(mockOutput, mockSubDir, '/static');
+    expect(result).toBe('<link href="./style.css">');
+  });
+
   it('should not replace urls with protocols or domains', () => {
     const mockOutput = `
 <meta name="twitter:url" content="http://localhost:8080/" />
