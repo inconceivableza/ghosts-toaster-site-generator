@@ -6,6 +6,8 @@ jest.mock('path', () => ({
   join: (...args) => args.join(''),
   resolve: (...args) => args.join(''),
   relative: (...args) => args.join(''),
+  dirname: (p) => p.split('/').slice(0, -1).join('/') || '/',
+  extname: (p) => { const i = p.lastIndexOf('.'); return i < 0 ? '' : p.slice(i); },
 }));
 
 jest.mock('fs');

@@ -19,58 +19,23 @@ const replaceSrcsetHelper = (output) => {
   // Replace URLs in srcset attributes
   // Matches: srcset="url1 1x, url2 2x, url3 480w, url4 800w"
   result = result.replace(
-    /srcset=["']([^"']+)["']/gi,
-    (match, srcsetValue) => {
-      // Split srcset value by commas to handle multiple sources
+    /(srcset)=(["'])([^"']+)\2/gi,
+    (match, attr, quote, srcsetValue) => {
       const updatedSrcset = srcsetValue
-        .split(',')
-        .map(source => {
-          let trimmedSource = source.trim();
-
-          // Replace full domain URLs
-          trimmedSource = trimmedSource.replace(
-            new RegExp(escapeRegex(sourceDomain), 'gi'),
-            productionDomain
-          );
-
-          // Replace protocol-relative URLs
-          trimmedSource = trimmedSource.replace(
-            new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'),
-            `//${productionDomainWithoutProtocol}`
-          );
-
-          return trimmedSource;
-        })
-        .join(', ');
-
-      return `srcset="${updatedSrcset}"`;
+        .replace(new RegExp(escapeRegex(sourceDomain), 'gi'), productionDomain)
+        .replace(new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'), `//${productionDomainWithoutProtocol}`);
+      return `${attr}=${quote}${updatedSrcset}${quote}`;
     }
   );
 
   // Also handle data-srcset for lazy loading
   result = result.replace(
-    /data-srcset=["']([^"']+)["']/gi,
-    (match, srcsetValue) => {
+    /(data-srcset)=(["'])([^"']+)\2/gi,
+    (match, attr, quote, srcsetValue) => {
       const updatedSrcset = srcsetValue
-        .split(',')
-        .map(source => {
-          let trimmedSource = source.trim();
-
-          trimmedSource = trimmedSource.replace(
-            new RegExp(escapeRegex(sourceDomain), 'gi'),
-            productionDomain
-          );
-
-          trimmedSource = trimmedSource.replace(
-            new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'),
-            `//${productionDomainWithoutProtocol}`
-          );
-
-          return trimmedSource;
-        })
-        .join(', ');
-
-      return `data-srcset="${updatedSrcset}"`;
+        .replace(new RegExp(escapeRegex(sourceDomain), 'gi'), productionDomain)
+        .replace(new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'), `//${productionDomainWithoutProtocol}`);
+      return `${attr}=${quote}${updatedSrcset}${quote}`;
     }
   );
 

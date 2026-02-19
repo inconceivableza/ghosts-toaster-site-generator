@@ -18,8 +18,11 @@ const replaceJavaScriptUrlsHelper = (output) => {
 
   // Replace URLs in string literals (single and double quotes)
   result = result.replace(
-    new RegExp(`(['"])(.*?)(${escapeRegex(sourceDomain)})(.*?)\\1`, 'g'),
-    `$1$2${productionDomain}$4$1`
+    new RegExp(`(['"])(.*?)\\1`, 'g'),
+    (match, quote, content) => {
+      if (!content.includes(sourceDomain)) return match;
+      return `${quote}${content.replace(new RegExp(escapeRegex(sourceDomain), 'g'), productionDomain)}${quote}`;
+    }
   );
 
   // Replace URLs in template literals

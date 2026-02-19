@@ -473,28 +473,28 @@ const fixtures = {
    */
   problematicPatterns: {
     // URLs in data attributes
-    dataAttributes: \`<div data-url="${GHOST_DOMAIN}" data-config='{"url": "${GHOST_DOMAIN}", "api": "${GHOST_DOMAIN}/api/"}'></div>\`,
+    dataAttributes: `<div data-url="${GHOST_DOMAIN}" data-config='{"url": "${GHOST_DOMAIN}", "api": "${GHOST_DOMAIN}/api/"}'></div>`,
 
     // URLs in HTML comments
-    htmlComments: \`<!-- Ghost site: ${GHOST_DOMAIN} -->\n<!-- API: ${GHOST_DOMAIN}/ghost/api/ -->\`,
+    htmlComments: `<!-- Ghost site: ${GHOST_DOMAIN} -->\n<!-- API: ${GHOST_DOMAIN}/ghost/api/ -->`,
 
     // URLs in script tags as text content
-    scriptContent: \`<script>window.ghostUrl = "${GHOST_DOMAIN}";</script>\`,
+    scriptContent: `<script>window.ghostUrl = "${GHOST_DOMAIN}";</script>`,
 
     // Protocol-relative URLs that might be missed
-    protocolRelative: \`<img src="//${GHOST_DOMAIN.replace('http://', '')}/image.jpg">\`,
+    protocolRelative: `<img src="//${GHOST_DOMAIN.replace('http://', '')}/image.jpg">`,
 
     // Mixed case attributes that might be missed
-    mixedCase: \`<LINK REL="canonical" HREF="${GHOST_DOMAIN}/post/">\`,
+    mixedCase: `<LINK REL="canonical" HREF="${GHOST_DOMAIN}/post/">`,
 
     // URLs with query parameters and fragments
-    urlsWithParams: \`<a href="${GHOST_DOMAIN}/search?q=test&sort=date#results">Search</a>\`,
+    urlsWithParams: `<a href="${GHOST_DOMAIN}/search?q=test&sort=date#results">Search</a>`,
 
     // Encoded URLs
-    encodedUrls: \`<meta content="Visit ${GHOST_DOMAIN}/about%20us for more info">\`,
+    encodedUrls: `<meta content="Visit ${GHOST_DOMAIN}/about%20us for more info">`,
 
     // URLs in CSS calc() functions
-    cssCalc: \`background: calc(100% - url('${GHOST_DOMAIN}/bg.jpg'));\`
+    cssCalc: `background: calc(100% - url('${GHOST_DOMAIN}/bg.jpg'));`
   }
 };
 

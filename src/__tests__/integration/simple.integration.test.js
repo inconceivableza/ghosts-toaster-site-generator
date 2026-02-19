@@ -4,6 +4,7 @@ const { compose } = require('lodash/fp');
 jest.mock('../../constants/OPTIONS', () => ({
   SOURCE_DOMAIN: 'http://ghost.example.com:2368',
   PRODUCTION_DOMAIN: 'https://www.example.com',
+  ALT_DOMAINS: [],
 }));
 
 const replaceDomainWithUrlHelper = require('../../helpers/replaceDomainWithUrlHelper');
