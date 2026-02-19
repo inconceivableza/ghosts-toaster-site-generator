@@ -61,14 +61,14 @@ const generateStaticSite = async () => {
     removeQueryStringsHelper(absoluteStaticPath);
 
     // Replace urls if not in preview mode, otherwise use preview url
-    if (argv.url && !argv.preview) {
+    if (OPTIONS.PRODUCTION_DOMAIN !== OPTIONS.SOURCE_DOMAIN && !argv.preview) {
       /**
        * Replace url in links
        */
       replaceUrlHelper(
         absoluteStaticPath,
         /\.(html|xml|xsl|txt|js)/,
-        argv.url,
+        OPTIONS.PRODUCTION_DOMAIN,
       );
     }
 
