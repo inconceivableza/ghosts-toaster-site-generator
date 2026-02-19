@@ -123,39 +123,40 @@ class GhostDomainsPlugin(WpullPlugin):
         if not self.SOURCE_DOMAIN or not self.PRODUCTION_DOMAIN:
             return content
 
-        # Replace URLs in url() functions
-        content = re.sub(
-            rf'url\(\s*(["\']?)(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)\1\s*\)',
-            rf'url(\1\2{self.PRODUCTION_DOMAIN}\4\1)',
-            content, flags=re.IGNORECASE
-        )
+        for source_url, source_host in zip(self.SOURCE_DOMAINS, self.source_domains):
+            # Replace URLs in url() functions
+            content = re.sub(
+                rf'url\(\s*(["\']?)(.*?)({self._escape_regex(source_url)})(.*?)\1\s*\)',
+                rf'url(\1\2{self.PRODUCTION_DOMAIN}\4\1)',
+                content, flags=re.IGNORECASE
+            )
 
-        # Replace protocol-relative URLs in url() functions
-        content = re.sub(
-            rf'url\(\s*(["\']?)([^"\']*?)(//{self._escape_regex(self.source_domain_without_protocol)})([^"\']*?)\1\s*\)',
-            rf'url(\1\2//{self.production_domain_without_protocol}\4\1)',
-            content, flags=re.IGNORECASE
-        )
+            # Replace protocol-relative URLs in url() functions
+            content = re.sub(
+                rf'url\(\s*(["\']?)([^"\']*?)(//{self._escape_regex(source_host)})([^"\']*?)\1\s*\)',
+                rf'url(\1\2//{self.production_domain_without_protocol}\4\1)',
+                content, flags=re.IGNORECASE
+            )
 
-        # Replace URLs in @import statements
-        content = re.sub(
-            rf'@import\s+(["\'])(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)\1',
-            rf'@import \1\2{self.PRODUCTION_DOMAIN}\4\1',
-            content, flags=re.IGNORECASE
-        )
+            # Replace URLs in @import statements
+            content = re.sub(
+                rf'@import\s+(["\'])(.*?)({self._escape_regex(source_url)})(.*?)\1',
+                rf'@import \1\2{self.PRODUCTION_DOMAIN}\4\1',
+                content, flags=re.IGNORECASE
+            )
 
-        content = re.sub(
-            rf'@import\s+url\(\s*(["\']?)(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)\1\s*\)',
-            rf'@import url(\1\2{self.PRODUCTION_DOMAIN}\4\1)',
-            content, flags=re.IGNORECASE
-        )
+            content = re.sub(
+                rf'@import\s+url\(\s*(["\']?)(.*?)({self._escape_regex(source_url)})(.*?)\1\s*\)',
+                rf'@import url(\1\2{self.PRODUCTION_DOMAIN}\4\1)',
+                content, flags=re.IGNORECASE
+            )
 
-        # Replace protocol-relative URLs in @import statements
-        content = re.sub(
-            rf'@import\s+(["\'])([^"\']*?)(//{self._escape_regex(self.source_domain_without_protocol)})([^"\']*?)\1',
-            rf'@import \1\2//{self.production_domain_without_protocol}\4\1',
-            content, flags=re.IGNORECASE
-        )
+            # Replace protocol-relative URLs in @import statements
+            content = re.sub(
+                rf'@import\s+(["\'])([^"\']*?)(//{self._escape_regex(source_host)})([^"\']*?)\1',
+                rf'@import \1\2//{self.production_domain_without_protocol}\4\1',
+                content, flags=re.IGNORECASE
+            )
 
         return content
 
@@ -164,46 +165,47 @@ class GhostDomainsPlugin(WpullPlugin):
         if not self.SOURCE_DOMAIN or not self.PRODUCTION_DOMAIN:
             return content
 
-        # Replace URLs in string literals (single and double quotes)
-        content = re.sub(
-            rf'(["\'])(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)\1',
-            rf'\1\2{self.PRODUCTION_DOMAIN}\4\1',
-            content
-        )
+        for source_url, source_host in zip(self.SOURCE_DOMAINS, self.source_domains):
+            # Replace URLs in string literals (single and double quotes)
+            content = re.sub(
+                rf'(["\'])(.*?)({self._escape_regex(source_url)})(.*?)\1',
+                rf'\1\2{self.PRODUCTION_DOMAIN}\4\1',
+                content
+            )
 
-        # Replace URLs in template literals
-        content = re.sub(
-            rf'(`)(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)`',
-            rf'\1\2{self.PRODUCTION_DOMAIN}\4`',
-            content
-        )
+            # Replace URLs in template literals
+            content = re.sub(
+                rf'(`)(.*?)({self._escape_regex(source_url)})(.*?)`',
+                rf'\1\2{self.PRODUCTION_DOMAIN}\4`',
+                content
+            )
 
-        # Replace protocol-relative URLs in strings
-        content = re.sub(
-            rf'(["\'])([^"\']*?)(//{self._escape_regex(self.source_domain_without_protocol)})([^"\']*?)\1',
-            rf'\1\2//{self.production_domain_without_protocol}\4\1',
-            content
-        )
+            # Replace protocol-relative URLs in strings
+            content = re.sub(
+                rf'(["\'])([^"\']*?)(//{self._escape_regex(source_host)})([^"\']*?)\1',
+                rf'\1\2//{self.production_domain_without_protocol}\4\1',
+                content
+            )
 
-        # Replace URLs in JavaScript object properties
-        content = re.sub(
-            rf'(url|href|src)\s*:\s*(["\'])(.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?)\2',
-            rf'\1: \2\3{self.PRODUCTION_DOMAIN}\5\2',
-            content
-        )
+            # Replace URLs in JavaScript object properties
+            content = re.sub(
+                rf'(url|href|src)\s*:\s*(["\'])(.*?)({self._escape_regex(source_url)})(.*?)\2',
+                rf'\1: \2\3{self.PRODUCTION_DOMAIN}\5\2',
+                content
+            )
 
-        # Replace URLs in JavaScript comments
-        content = re.sub(
-            rf'(//.*?)({self._escape_regex(self.SOURCE_DOMAIN)})',
-            rf'\1{self.PRODUCTION_DOMAIN}',
-            content
-        )
+            # Replace URLs in JavaScript comments
+            content = re.sub(
+                rf'(//.*?)({self._escape_regex(source_url)})',
+                rf'\1{self.PRODUCTION_DOMAIN}',
+                content
+            )
 
-        content = re.sub(
-            rf'(/\*.*?)({self._escape_regex(self.SOURCE_DOMAIN)})(.*?\*/)',
-            rf'\1{self.PRODUCTION_DOMAIN}\3',
-            content, flags=re.DOTALL
-        )
+            content = re.sub(
+                rf'(/\*.*?)({self._escape_regex(source_url)})(.*?\*/)',
+                rf'\1{self.PRODUCTION_DOMAIN}\3',
+                content, flags=re.DOTALL
+            )
 
         return content
 
