@@ -43,6 +43,23 @@ const replaceDomainWithUrlHelper = (
     }
   });
 
+  // Replace any alt-domain references with the production URL, using the same
+  // protocol/bare-domain variations as above.
+  OPTIONS.ALT_DOMAINS.forEach(altDomain => {
+    const altWithoutProtocol = altDomain.replace(/^https?:\/\//, '');
+
+    result = result.replace(new RegExp(escapeRegex(altDomain), 'gi'), targetUrl);
+    result = result.replace(
+      new RegExp(`//${escapeRegex(altWithoutProtocol)}`, 'gi'),
+      `//${targetDomainWithoutProtocol}`
+    );
+    [`https://${altWithoutProtocol}`, `http://${altWithoutProtocol}`, altWithoutProtocol].forEach(variation => {
+      if (variation !== altDomain) {
+        result = result.replace(new RegExp(escapeRegex(variation), 'gi'), targetUrl);
+      }
+    });
+  });
+
   return result;
 };
 
