@@ -70,12 +70,12 @@ node src/index.js --fail-on-error
 ### Docker Usage
 ```bash
 # Build Docker image
-docker build -t ghost-static-site-generator:latest .
+docker build -t ghosts-toaster-site-generator:latest .
 
 # Run with mounted output directory
 docker run --rm -it \
   -v ./data:/data \
-  ghost-static-site-generator:latest \
+  ghosts-toaster-site-generator:latest \
   --domain http://ghost:2368 \
   --productionDomain https://www.example.com
 ```

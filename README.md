@@ -1,4 +1,4 @@
-# ghost-static-site-generator (ghosts-toaster fork)
+# ghosts-toaster-site-generator
 
 A tool for generating static sites from [Ghost](https://ghost.org/) blogs. This fork extends the [original ghost-static-site-generator](https://github.com/Fried-Chicken/ghost-static-site-generator) with support for [wpull](https://github.com/ArchiveTeam/ludios_wpull), a Python-based web crawler that enables in-process content transformation during download.
 
@@ -24,8 +24,8 @@ The wget path remains available and works as described in the original project.
 ### From source
 
 ```bash
-git clone https://github.com/inconceivableza/ghost-static-site-generator.git
-cd ghost-static-site-generator
+git clone https://github.com/inconceivableza/ghosts-toaster-site-generator.git
+cd ghosts-toaster-site-generator
 npm install
 ```
 
@@ -44,13 +44,13 @@ Two Dockerfiles are provided:
 
 ```bash
 # Build the wpull-capable image
-docker build -f Dockerfile-static-generator -t ghost-static-site-generator:latest .
+docker build -f Dockerfile-static-generator -t ghosts-toaster-site-generator:latest .
 
 # Run with mounted output directory
 mkdir -p ./data
 docker run --rm -it \
     -v ./data:/data \
-    ghost-static-site-generator:latest \
+    ghosts-toaster-site-generator:latest \
     --use-wpull \
     --domain http://ghost:2368 \
     --productionDomain https://www.myblog.com
