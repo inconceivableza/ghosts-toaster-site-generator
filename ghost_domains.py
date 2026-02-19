@@ -219,6 +219,11 @@ class GhostDomainsPlugin(WpullPlugin):
             transformed = self._transform_html_content(content_str)
             if transformed != content_str:
                 self.logger.info(f'Transformed HTML content in {url}')
+                self.logger.info(f'Counted source {self.SOURCE_DOMAIN} {content_str.count(self.SOURCE_DOMAIN)} -> {transformed.count(self.SOURCE_DOMAIN)}')
+                for alt_domain in self.ALT_DOMAINS:
+                    self.logger.info(f'Counted alt source {alt_domain} {content_str.count(alt_domain)} -> {transformed.count(alt_domain)}')
+                self.logger.info(f'Counted production {self.PRODUCTION_DOMAIN} {content_str.count(self.PRODUCTION_DOMAIN)} -> {transformed.count(self.PRODUCTION_DOMAIN)}')
+                self.logger.info(f'Counted Toaster/TOASTER {content_str.count("Toaster")}/{content_str.count("TOASTER")} -> {transformed.count("Toaster")}/{transformed.count("TOASTER")}')
         elif content_type.startswith('text/css'):
             transformed = self._transform_css_content(content_str)
             if transformed != content_str:
@@ -254,6 +259,7 @@ class GhostDomainsPlugin(WpullPlugin):
             if item_session.request.url.startswith(self.SOURCE_DOMAIN.rstrip('/') + '/ghost/'):
                 self.logger.info(f'Not retrieving ghost admin interface url: {item_session.request.url}')
                 return False
+            self.logger.debug(f'Source domain detected: retrieving {item_session.request.url}')
             return True
         for alt_domain in self.ALT_DOMAINS:
             if item_session.request.url.startswith(alt_domain):
@@ -261,6 +267,7 @@ class GhostDomainsPlugin(WpullPlugin):
                 item_session.request.url = adjusted_url
                 self.logger.info(f'Alt domain remap: rather than retrieving {item_session.request.url}, will retrieve {adjusted_url}')
                 return True
+        self.logger.debug(f'No domain detected: not retrieving {item_session.request.url}')
         return False
 
     @hook(PluginFunctions.handle_response)
