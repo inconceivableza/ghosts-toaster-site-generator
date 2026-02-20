@@ -40,6 +40,12 @@ describe('crawlPageAsyncHelper', () => {
     expect(wgetCall[0]).toContain('http://localhost:2368/post');
   });
 
+  it('should use default no-op callback when no callback is provided', () => {
+    // exec invokes the callback so the default () => {} is exercised
+    mockExec.mockImplementationOnce((cmd, opts, cb) => cb(null, '', ''));
+    expect(() => crawlPageAsyncHelper('http://localhost:2368/post')).not.toThrow();
+  });
+
   it('should pass callback to exec', () => {
     const mockCallback = jest.fn();
     crawlPageAsyncHelper('http://localhost:2368/post', mockCallback);
@@ -144,5 +150,32 @@ describe('crawlPageAsyncHelper', () => {
     expect(wgetCall[0]).toContain('--no-robots');
     expect(wgetCall[0]).toContain('--sitemaps');
     expect(wgetCall[0]).toContain('--plugin-script');
+  });
+
+  it('should remap URL to FETCH_DOMAIN, add Host header and --span-hosts including ALT_DOMAINS hostnames', () => {
+    jest.resetModules();
+    mockExec = jest.fn();
+    mockExecSync = jest.fn().mockReturnValue(Buffer.from(''));
+    jest.doMock('child_process', () => ({ exec: mockExec, execSync: mockExecSync }));
+    jest.doMock('../../../constants/OPTIONS', () => ({
+      ...mockOptions,
+      MIRROR_COMMAND: 'wpull',
+      SOURCE_DOMAIN: 'https://ghost.example.com',
+      FETCH_DOMAIN: 'http://ghost_container:2368',
+      SOURCE_DOMAIN_HOST: 'ghost.example.com',
+      FETCH_HOST_HEADER: '--header="Host: ghost.example.com" ',
+      ALT_DOMAINS: ['https://alt.example.com:2368'],
+    }));
+    jest.doMock('yargs', () => ({ argv: {} }));
+    crawlPageAsyncHelper = require('../crawlPageAsyncHelper');
+
+    crawlPageAsyncHelper('https://ghost.example.com/post');
+
+    const wgetCall = mockExec.mock.calls[0];
+    expect(wgetCall[0]).toContain('http://ghost_container:2368/post');
+    expect(wgetCall[0]).toContain('Host: ghost.example.com');
+    expect(wgetCall[0]).toContain('--span-hosts');
+    expect(wgetCall[0]).toContain('ghost.example.com');
+    expect(wgetCall[0]).toContain('alt.example.com');
   });
 });

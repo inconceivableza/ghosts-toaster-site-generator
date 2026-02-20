@@ -155,6 +155,17 @@ describe('replaceUrlWithSubDirPathHelper', () => {
     expect(replaceUrlWithSubDirPathHelper(mockOutput, '')).toBe(mockOutput);
   });
 
+  it('should use default empty string for output when output is omitted', () => {
+    // Triggers the `output = ''` default parameter branch
+    expect(replaceUrlWithSubDirPathHelper(undefined, '/deploy-folder')).toBe('');
+  });
+
+  it('should use default empty subDir when subDir is omitted, returning output unchanged', () => {
+    // Triggers the `subDir = ''` default parameter branch
+    const mockOutput = '<img src="/image.jpg">';
+    expect(replaceUrlWithSubDirPathHelper(mockOutput)).toBe(mockOutput);
+  });
+
   it('should use "." as relative prefix for root-level files (filePath at static root)', () => {
     const mockOutput = '<link href="/style.css">';
     const mockSubDir = '/deploy-folder';

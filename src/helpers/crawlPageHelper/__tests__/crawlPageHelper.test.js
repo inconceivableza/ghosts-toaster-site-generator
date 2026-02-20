@@ -185,4 +185,29 @@ describe('crawlPageHelper', () => {
     expect(wgetCall[0]).toContain('--span-hosts');
     expect(wgetCall[0]).toContain('--hostnames');
   });
+
+  it('should remap URL to FETCH_DOMAIN, add Host header and --span-hosts when FETCH_DOMAIN differs', () => {
+    jest.resetModules();
+    mockExecSync = jest.fn().mockReturnValue(Buffer.from(''));
+    jest.doMock('child_process', () => ({ execSync: mockExecSync }));
+    jest.doMock('../../../constants/OPTIONS', () => ({
+      ...mockOptions,
+      MIRROR_COMMAND: 'wpull',
+      SOURCE_DOMAIN: 'https://ghost.example.com',
+      FETCH_DOMAIN: 'http://ghost_container:2368',
+      SOURCE_DOMAIN_HOST: 'ghost.example.com',
+      FETCH_HOST_HEADER: '--header="Host: ghost.example.com" ',
+    }));
+    jest.doMock('yargs', () => ({ argv: {} }));
+    crawlPageHelper = require('../crawlPageHelper');
+
+    crawlPageHelper('https://ghost.example.com/post');
+
+    const calls = mockExecSync.mock.calls;
+    const wgetCall = calls[calls.length - 1];
+    expect(wgetCall[0]).toContain('http://ghost_container:2368/post');
+    expect(wgetCall[0]).toContain('Host: ghost.example.com');
+    expect(wgetCall[0]).toContain('--span-hosts');
+    expect(wgetCall[0]).toContain('ghost.example.com');
+  });
 });
