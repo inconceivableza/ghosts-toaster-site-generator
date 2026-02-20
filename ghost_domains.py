@@ -22,6 +22,8 @@ class GhostDomainsPlugin(WpullPlugin):
     PRODUCTION_DOMAIN = os.environ.get('PRODUCTION_DOMAIN')
     ALT_DOMAINS = os.environ.get('ALT_DOMAINS', '').split()
     SOURCE_DOMAINS = [SOURCE_DOMAIN] + ALT_DOMAINS
+    # When set, gssg connects to FETCH_DOMAIN but treats content as if from SOURCE_DOMAIN
+    FETCH_DOMAIN = os.environ.get('FETCH_DOMAIN') or SOURCE_DOMAIN
 
     def __init__(self):
         super().__init__()
@@ -32,6 +34,7 @@ class GhostDomainsPlugin(WpullPlugin):
             self.production_domain_without_protocol = re.sub(r'^https?://', '', self.PRODUCTION_DOMAIN)
         self.source_domains = [re.sub(r'^https?://', '', source_domain) for source_domain in self.SOURCE_DOMAINS]
         self.source_domain_searches = [rf'(https?:)?//{self._escape_regex(source_domain)}' for source_domain in self.SOURCE_DOMAINS]
+        self.fetch_domain = self.FETCH_DOMAIN or self.SOURCE_DOMAIN
 
     def activate(self):
         super().activate()
@@ -43,6 +46,8 @@ class GhostDomainsPlugin(WpullPlugin):
             self.logger.info(f"Will remap {self.PRODUCTION_DOMAIN} to {self.SOURCE_DOMAIN}")
         if self.ALT_DOMAINS:
             self.logger.info(f"Will remap any of {self.ALT_DOMAINS} to {self.SOURCE_DOMAIN}")
+        if self.fetch_domain and self.fetch_domain != self.SOURCE_DOMAIN:
+            self.logger.info(f"Will fetch from {self.fetch_domain} instead of {self.SOURCE_DOMAIN}")
 
     def deactivate(self):
         super().deactivate()
@@ -252,24 +257,39 @@ class GhostDomainsPlugin(WpullPlugin):
         if not self.PRODUCTION_DOMAIN or not self.SOURCE_DOMAIN:
             # this means that this is not properly set up in order to be able to filter domains
             return True
-        if item_session.request.url.startswith(self.PRODUCTION_DOMAIN):
-            adjusted_url = item_session.request.url.replace(self.PRODUCTION_DOMAIN, self.SOURCE_DOMAIN, 1)
+        url = item_session.request.url
+        if url.startswith(self.PRODUCTION_DOMAIN):
+            # Remap production domain to fetch domain (queued as a new URL so accept_url runs again)
+            adjusted_url = url.replace(self.PRODUCTION_DOMAIN, self.fetch_domain, 1)
             item_session.add_child_url(adjusted_url)
-            self.logger.info(f'Production domain remap: rather than retrieving {item_session.request.url}, will retrieve {adjusted_url}')
+            self.logger.info(f'Production domain remap: rather than retrieving {url}, will retrieve {adjusted_url}')
             return False
-        elif item_session.request.url.startswith(self.SOURCE_DOMAIN):
-            if item_session.request.url.startswith(self.SOURCE_DOMAIN.rstrip('/') + '/ghost/'):
-                self.logger.info(f'Not retrieving ghost admin interface url: {item_session.request.url}')
+        elif url.startswith(self.SOURCE_DOMAIN):
+            if url.startswith(self.SOURCE_DOMAIN.rstrip('/') + '/ghost/'):
+                self.logger.info(f'Not retrieving ghost admin interface url: {url}')
                 return False
-            self.logger.debug(f'Source domain detected: retrieving {item_session.request.url}')
+            if self.fetch_domain != self.SOURCE_DOMAIN:
+                # Remap source domain URL to fetch domain for internal connection
+                adjusted_url = url.replace(self.SOURCE_DOMAIN, self.fetch_domain, 1)
+                item_session.request.url = adjusted_url
+                self.logger.info(f'Source domain fetch remap: {url} -> {adjusted_url}')
+            else:
+                self.logger.debug(f'Source domain detected: retrieving {url}')
+            return True
+        elif self.fetch_domain != self.SOURCE_DOMAIN and url.startswith(self.fetch_domain):
+            # URL already in fetch-domain space (e.g. the starting URL passed by crawlPageHelper)
+            if url.startswith(self.fetch_domain.rstrip('/') + '/ghost/'):
+                self.logger.info(f'Not retrieving ghost admin interface url: {url}')
+                return False
+            self.logger.debug(f'Fetch domain detected: retrieving {url}')
             return True
         for alt_domain in self.ALT_DOMAINS:
-            if item_session.request.url.startswith(alt_domain):
-                adjusted_url = item_session.request.url.replace(alt_domain, self.SOURCE_DOMAIN, 1)
+            if url.startswith(alt_domain):
+                adjusted_url = url.replace(alt_domain, self.fetch_domain, 1)
                 item_session.request.url = adjusted_url
-                self.logger.info(f'Alt domain remap: rather than retrieving {item_session.request.url}, will retrieve {adjusted_url}')
+                self.logger.info(f'Alt domain remap: {url} -> {adjusted_url}')
                 return True
-        self.logger.debug(f'No domain detected: not retrieving {item_session.request.url}')
+        self.logger.debug(f'No domain detected: not retrieving {url}')
         return False
 
     @hook(PluginFunctions.handle_response)

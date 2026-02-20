@@ -22,6 +22,17 @@ const SAVE_AS_REFERER = argv.saveAsReferer || false;
 const X_FORWARDED_PROTO = argv.avoidHttps ? '--header="X-Forwarded-Proto: https" ' : '';
 const USE_WPULL = argv.useWpull || false;
 const MIRROR_COMMAND = USE_WPULL ? 'wpull' : 'wget';
+/**
+ * Optional internal URL to actually fetch from (e.g. http://ghost_sitename:2368).
+ * When set, gssg connects here but treats content as if served from SOURCE_DOMAIN.
+ */
+const FETCH_DOMAIN = (argv.fetchDomain || SOURCE_DOMAIN).replace(/\/?$/, '');
+// Host header to send when fetching from an internal domain so Ghost serves the right content
+const FETCH_HOST_HEADER = FETCH_DOMAIN !== SOURCE_DOMAIN
+  ? `--header="Host: ${SOURCE_DOMAIN.replace(/^https?:\/\//, '')}" `
+  : '';
+// Hostname-only part of SOURCE_DOMAIN (no protocol, no port) for wpull --hostnames
+const SOURCE_DOMAIN_HOST = SOURCE_DOMAIN.replace(/^https?:\/\//, '').replace(/:[0-9]+$/, '');
 
 const shouldShowProgress = () => {
   if (argv.silent) {
@@ -68,6 +79,9 @@ const OPTIONS = {
   X_FORWARDED_PROTO,
   MIRROR_COMMAND,
   PLUGIN_SCRIPT: path.join(path.dirname(path.dirname(__dirname)), 'ghost_domains.py'),
+  FETCH_DOMAIN,
+  FETCH_HOST_HEADER,
+  SOURCE_DOMAIN_HOST,
 };
 
 module.exports = OPTIONS;

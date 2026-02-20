@@ -27,25 +27,42 @@ const crawlPageAsyncHelper = (
   url,
   callback = () => {},
 ) => {
+  // When FETCH_DOMAIN is set, connect to it directly but present SOURCE_DOMAIN to Ghost via Host header
+  const fetchUrl = OPTIONS.FETCH_DOMAIN !== OPTIONS.SOURCE_DOMAIN
+    ? url.replace(OPTIONS.SOURCE_DOMAIN, OPTIONS.FETCH_DOMAIN)
+    : url;
+
+  const spanHostnames = [
+    ...(OPTIONS.FETCH_DOMAIN !== OPTIONS.SOURCE_DOMAIN ? [OPTIONS.SOURCE_DOMAIN_HOST] : []),
+    ...OPTIONS.ALT_DOMAINS.map(d => d.replace(/^https?:\/\//, '').replace(/:[0-9]+$/, '')),
+  ].filter(Boolean);
+  const spanHostsFlag = OPTIONS.MIRROR_COMMAND === 'wpull' && spanHostnames.length
+    ? `--span-hosts --hostnames ${spanHostnames.join(',')} `
+    : '';
+
   const wgetCommand = `${OPTIONS.MIRROR_COMMAND} -v ${OPTIONS.SHOW_PROGRESS_BAR}--recursive `
     + `${OPTIONS.X_FORWARDED_PROTO}`
+    + `${OPTIONS.FETCH_HOST_HEADER}`
     // + '--timestamping ' // temporarily disable timestamping as not all urls being retrieved
     + '--page-requisites '
     + '--no-parent '
     + '--no-host-directories '
+    + spanHostsFlag
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? '--no-robots ' : '')
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? '--sitemaps ' : '')
     + ((OPTIONS.MIRROR_COMMAND === 'wpull') ? `--plugin-script ${OPTIONS.PLUGIN_SCRIPT} ` : '')
     + '--restrict-file-names=unix '
     + `--directory-prefix ${OPTIONS.STATIC_DIRECTORY} ${contentOnError()} `
     + `${saveAsReferer()}`
-    + `${url}`;
+    + `${fetchUrl}`;
+
+  const env = { ...process.env, SOURCE_DOMAIN: OPTIONS.SOURCE_DOMAIN, PRODUCTION_DOMAIN: OPTIONS.PRODUCTION_DOMAIN, ALT_DOMAINS: OPTIONS.ALT_DOMAINS, FETCH_DOMAIN: OPTIONS.FETCH_DOMAIN };
 
   try {
     console.log(`Fetching: ${url}`);
     exec(
       wgetCommand,
-      { stdio: 'inherit' },
+      { env },
       callback,
     );
   } catch (execError) {

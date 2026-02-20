@@ -6,10 +6,13 @@ describe('crawlPageHelper', () => {
     MIRROR_COMMAND: 'wget',
     SHOW_PROGRESS_BAR: '',
     X_FORWARDED_PROTO: '',
+    FETCH_HOST_HEADER: '',
     STATIC_DIRECTORY: 'static',
     SAVE_AS_REFERER: false,
     ALT_DOMAINS: [],
     SOURCE_DOMAIN: 'http://localhost:2368',
+    FETCH_DOMAIN: 'http://localhost:2368',
+    SOURCE_DOMAIN_HOST: 'localhost',
     PRODUCTION_DOMAIN: 'https://www.example.com',
     PLUGIN_SCRIPT: '/path/to/plugin.py',
   };
