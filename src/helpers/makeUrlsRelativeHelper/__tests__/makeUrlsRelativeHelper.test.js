@@ -75,6 +75,32 @@ describe('makeUrlsRelativeHelper', () => {
     });
   });
 
+  describe('root URL (no trailing slash)', () => {
+    it('should convert bare root SOURCE_DOMAIN to /', () => {
+      const input = `<a href="${sourceDomain}">Home</a>`;
+      const expected = `<a href="/">Home</a>`;
+      expect(makeUrlsRelativeHelper('index.html')(input)).toBe(expected);
+    });
+
+    it('should convert bare root SOURCE_DOMAIN with https to /', () => {
+      const input = `<a href="https://ghost.example.com:2368">Home</a>`;
+      const expected = `<a href="/">Home</a>`;
+      expect(makeUrlsRelativeHelper('index.html')(input)).toBe(expected);
+    });
+
+    it('should convert protocol-relative bare root SOURCE_DOMAIN to /', () => {
+      const input = `<a href="//ghost.example.com:2368">Home</a>`;
+      const expected = `<a href="/">Home</a>`;
+      expect(makeUrlsRelativeHelper('index.html')(input)).toBe(expected);
+    });
+
+    it('should convert bare root ALT_DOMAIN to /', () => {
+      const input = `<a href="${altDomain}">Home</a>`;
+      const expected = `<a href="/">Home</a>`;
+      expect(makeUrlsRelativeHelper('index.html')(input)).toBe(expected);
+    });
+  });
+
   describe('non-matching domains', () => {
     it('should not modify external domains', () => {
       const input = `<a href="https://external.com/page">External</a>`;

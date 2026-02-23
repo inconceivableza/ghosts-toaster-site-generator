@@ -21,11 +21,15 @@ const makeUrlsRelativeHelper = (file) => (output) => {
     if (!domain) continue;
     const domainWithoutProtocol = domain.replace(/^https?:\/\//, '');
     const escapedWithoutProtocol = escapeRegex(domainWithoutProtocol);
-    // Strip https?://domain (any protocol variant) → leaves /path
+    // Strip https?://domain (any protocol variant) → leaves /path, or / if no path follows
     // Must run before the //domain strip to avoid leaving a dangling "https:" or "http:"
-    result = result.replace(new RegExp(`https?://${escapedWithoutProtocol}`, 'gi'), '');
-    // Strip //domain (protocol-relative URLs) → leaves /path
-    result = result.replace(new RegExp(`//${escapedWithoutProtocol}`, 'gi'), '');
+    result = result.replace(new RegExp(`https?://${escapedWithoutProtocol}`, 'gi'), (match, offset, string) => {
+      return string[offset + match.length] === '/' ? '' : '/';
+    });
+    // Strip //domain (protocol-relative URLs) → leaves /path, or / if no path follows
+    result = result.replace(new RegExp(`//${escapedWithoutProtocol}`, 'gi'), (match, offset, string) => {
+      return string[offset + match.length] === '/' ? '' : '/';
+    });
   }
 
   return result;
