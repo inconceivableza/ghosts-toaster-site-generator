@@ -34,10 +34,17 @@ const crawlPageHelper = (url) => {
     ? url.replaceAll(OPTIONS.SOURCE_DOMAIN, OPTIONS.FETCH_DOMAIN)
     : url;
 
-  // --span-hosts is NOT used: the ghost_domains.py plugin handles all cross-domain remapping via
-  // add_child_url. Adding --hostnames would restrict wpull to those hosts only, which would prevent
-  // it from fetching from FETCH_DOMAIN (e.g. ghost_gtdemo:2368) when the listed host differs.
-  const spanHostsFlag = '';
+  // When FETCH_DOMAIN differs from SOURCE_DOMAIN, Ghost's HTML contains absolute navigation links
+  // pointing to SOURCE_DOMAIN (a different host from FETCH_DOMAIN). Without --span-hosts, wpull
+  // never extracts cross-host links from HTML so accept_url is never called and the plugin's
+  // add_child_url remapping never fires. --span-hosts lets wpull extract all cross-host links;
+  // the ghost_domains.py plugin's accept_url then handles filtering — accepting FETCH_DOMAIN,
+  // remapping SOURCE/PRODUCTION/ALT domains to FETCH_DOMAIN, and rejecting everything else.
+  // Do NOT use --hostnames: it restricts wpull to only the listed hosts, which would exclude
+  // FETCH_DOMAIN (e.g. ghost_sitename:2368) if only SOURCE_DOMAIN were listed.
+  const spanHostsFlag = (OPTIONS.MIRROR_COMMAND === 'wpull' && OPTIONS.FETCH_DOMAIN !== OPTIONS.SOURCE_DOMAIN)
+    ? '--span-hosts '
+    : '';
 
   const wgetCommand = `${OPTIONS.MIRROR_COMMAND} -v ${OPTIONS.SHOW_PROGRESS_BAR}--recursive `
     + `${OPTIONS.X_FORWARDED_PROTO}`

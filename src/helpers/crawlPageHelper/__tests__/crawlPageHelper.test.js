@@ -166,7 +166,7 @@ describe('crawlPageHelper', () => {
     expect(wgetCall[0]).toContain('--plugin-script');
   });
 
-  it('should not include --span-hosts even when ALT_DOMAINS is non-empty (plugin handles remapping)', () => {
+  it('should not include --span-hosts when FETCH_DOMAIN equals SOURCE_DOMAIN (navigation links are same-host)', () => {
     jest.resetModules();
     mockExecSync = jest.fn().mockReturnValue(Buffer.from(''));
     jest.doMock('child_process', () => ({ execSync: mockExecSync }));
@@ -207,7 +207,11 @@ describe('crawlPageHelper', () => {
     const wgetCall = calls[calls.length - 1];
     expect(wgetCall[0]).toContain('http://ghost_container:2368/post');
     expect(wgetCall[0]).toContain('Host: ghost.example.com');
-    // SOURCE_DOMAIN_HOST is NOT added to --hostnames (it would restrict wpull from fetching FETCH_DOMAIN)
-    expect(wgetCall[0]).not.toContain('--span-hosts');
+    // --span-hosts is added when FETCH_DOMAIN differs from SOURCE_DOMAIN so that wpull extracts
+    // cross-host navigation links (e.g. https://ghost.example.com/about/) from Ghost's HTML and
+    // presents them to accept_url where the plugin remaps them to FETCH_DOMAIN.
+    // Do NOT use --hostnames: it restricts wpull to only the listed hosts.
+    expect(wgetCall[0]).toContain('--span-hosts');
+    expect(wgetCall[0]).not.toContain('--hostnames');
   });
 });
