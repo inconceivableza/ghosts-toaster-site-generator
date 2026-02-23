@@ -1,9 +1,10 @@
 jest.mock('fs', () => ({
   readdirSync: jest.fn(),
   lstatSync: jest.fn(),
+  existsSync: jest.fn().mockReturnValue(false),
 }));
 
-jest.mock('../../crawlPageAsyncHelper', () => jest.fn());
+jest.mock('../../crawlPageHelper', () => jest.fn());
 
 jest.mock('../../../constants/OPTIONS', () => {
   const path = require('path');
@@ -16,15 +17,16 @@ jest.mock('../../../constants/OPTIONS', () => {
 
 const path = require('path');
 const fs = require('fs');
-const crawlPageAsyncHelper = require('../../crawlPageAsyncHelper');
+const crawlPageHelper = require('../../crawlPageHelper');
 const responsiveImagesHelper = require('../responsiveImagesHelper');
 
 describe('responsiveImagesHelper', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    fs.existsSync.mockReturnValue(false);
   });
 
-  it('should call crawlPageAsyncHelper for each image and its size variants', () => {
+  it('should call crawlPageHelper once with all image URLs space-joined', () => {
     const contentPath = path.resolve(process.cwd(), 'static/content');
 
     fs.readdirSync.mockReturnValue(['photo.jpg']);
@@ -32,8 +34,20 @@ describe('responsiveImagesHelper', () => {
 
     responsiveImagesHelper();
 
-    // One original + 5 size variants = 6 calls
-    expect(crawlPageAsyncHelper).toHaveBeenCalledTimes(6);
+    // One original + 5 size variants = 6 URLs, batched into a single call
+    expect(crawlPageHelper).toHaveBeenCalledTimes(1);
+    const calledUrl = crawlPageHelper.mock.calls[0][0];
+    expect(calledUrl.split(' ')).toHaveLength(6);
+  });
+
+  it('should not call crawlPageHelper when all files already exist', () => {
+    fs.readdirSync.mockReturnValue(['photo.jpg']);
+    fs.lstatSync.mockReturnValue({ isDirectory: () => false });
+    fs.existsSync.mockReturnValue(true);
+
+    responsiveImagesHelper();
+
+    expect(crawlPageHelper).not.toHaveBeenCalled();
   });
 
   it('should not add size variants for already-sized images to prevent double-sizing', () => {
@@ -55,7 +69,9 @@ describe('responsiveImagesHelper', () => {
 
     // Only the original file path should be crawled — all 5 size variants are skipped
     // because they would produce a double-size path like w100/size/w300/photo.jpg
-    expect(crawlPageAsyncHelper).toHaveBeenCalledTimes(1);
+    expect(crawlPageHelper).toHaveBeenCalledTimes(1);
+    const calledUrl = crawlPageHelper.mock.calls[0][0];
+    expect(calledUrl.split(' ')).toHaveLength(1);
   });
 
   it('should recurse into subdirectories', () => {
@@ -70,7 +86,7 @@ describe('responsiveImagesHelper', () => {
     responsiveImagesHelper();
 
     expect(fs.readdirSync).toHaveBeenCalledTimes(2);
-    expect(crawlPageAsyncHelper).toHaveBeenCalled();
+    expect(crawlPageHelper).toHaveBeenCalled();
   });
 
   it('should replace ABSOLUTE_STATIC_DIRECTORY with SOURCE_DOMAIN in URLs', () => {
@@ -79,8 +95,8 @@ describe('responsiveImagesHelper', () => {
 
     responsiveImagesHelper();
 
-    const calledUrls = crawlPageAsyncHelper.mock.calls.map(call => call[0]);
-    calledUrls.forEach((url) => {
+    const calledUrl = crawlPageHelper.mock.calls[0][0];
+    calledUrl.split(' ').forEach((url) => {
       expect(url).toContain('http://localhost:2368');
     });
   });
