@@ -244,7 +244,13 @@ class GhostDomainsPlugin(WpullPlugin):
             if transformed != content_str:
                 self.logger.info(f'Transformed JavaScript content in {url}')
         else:
-            # For other content types, apply basic domain replacement
+            # Only transform known text-based content types.
+            # Binary types (images, fonts, PDFs, audio, video, wasm, etc.) must be returned
+            # unchanged — decoding them as UTF-8 with errors='ignore' drops bytes and corrupts data.
+            text_types = ('text/', 'application/json', 'application/xml',
+                          'application/xhtml', 'application/rss+xml', 'application/atom+xml')
+            if not any(content_type.startswith(t) for t in text_types):
+                return content
             transformed = content_str.replace(self.SOURCE_DOMAIN, self.PRODUCTION_DOMAIN)
             if self.source_domain_without_protocol and self.production_domain_without_protocol:
                 transformed = transformed.replace(f'//{self.source_domain_without_protocol}',
