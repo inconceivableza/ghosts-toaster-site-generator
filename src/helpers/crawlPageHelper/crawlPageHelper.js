@@ -26,20 +26,16 @@ const crawlPageHelper = (url) => {
   if (crawlHistory.has(url)) {
     return;
   }
-  // When FETCH_DOMAIN is set, connect to it directly but present SOURCE_DOMAIN to Ghost via Host header
+  // When FETCH_DOMAIN is set, connect to it directly but present SOURCE_DOMAIN to Ghost via Host header.
+  // Use replaceAll because the wpull url string may contain multiple space-separated URLs.
   const fetchUrl = OPTIONS.FETCH_DOMAIN !== OPTIONS.SOURCE_DOMAIN
-    ? url.replace(OPTIONS.SOURCE_DOMAIN, OPTIONS.FETCH_DOMAIN)
+    ? url.replaceAll(OPTIONS.SOURCE_DOMAIN, OPTIONS.FETCH_DOMAIN)
     : url;
 
-  // Build --span-hosts --hostnames list: SOURCE_DOMAIN host (so the plugin can remap links back to
-  // FETCH_DOMAIN) plus any ALT_DOMAINS (strip protocol and port for wpull hostname matching)
-  const spanHostnames = [
-    ...(OPTIONS.FETCH_DOMAIN !== OPTIONS.SOURCE_DOMAIN ? [OPTIONS.SOURCE_DOMAIN_HOST] : []),
-    ...OPTIONS.ALT_DOMAINS.map(d => d.replace(/^https?:\/\//, '').replace(/:[0-9]+$/, '')),
-  ].filter(Boolean);
-  const spanHostsFlag = OPTIONS.MIRROR_COMMAND === 'wpull' && spanHostnames.length
-    ? `--span-hosts --hostnames ${spanHostnames.join(',')} `
-    : '';
+  // --span-hosts is NOT used: the ghost_domains.py plugin handles all cross-domain remapping via
+  // add_child_url. Adding --hostnames would restrict wpull to those hosts only, which would prevent
+  // it from fetching from FETCH_DOMAIN (e.g. ghost_gtdemo:2368) when the listed host differs.
+  const spanHostsFlag = '';
 
   const wgetCommand = `${OPTIONS.MIRROR_COMMAND} -v ${OPTIONS.SHOW_PROGRESS_BAR}--recursive `
     + `${OPTIONS.X_FORWARDED_PROTO}`

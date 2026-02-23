@@ -166,7 +166,7 @@ describe('crawlPageHelper', () => {
     expect(wgetCall[0]).toContain('--plugin-script');
   });
 
-  it('should include --span-hosts and --hostnames when wpull and ALT_DOMAINS is non-empty', () => {
+  it('should not include --span-hosts even when ALT_DOMAINS is non-empty (plugin handles remapping)', () => {
     jest.resetModules();
     mockExecSync = jest.fn().mockReturnValue(Buffer.from(''));
     jest.doMock('child_process', () => ({ execSync: mockExecSync }));
@@ -182,11 +182,11 @@ describe('crawlPageHelper', () => {
 
     const calls = mockExecSync.mock.calls;
     const wgetCall = calls[calls.length - 1];
-    expect(wgetCall[0]).toContain('--span-hosts');
-    expect(wgetCall[0]).toContain('--hostnames');
+    expect(wgetCall[0]).not.toContain('--span-hosts');
+    expect(wgetCall[0]).not.toContain('--hostnames');
   });
 
-  it('should remap URL to FETCH_DOMAIN, add Host header and --span-hosts when FETCH_DOMAIN differs', () => {
+  it('should remap URL to FETCH_DOMAIN and add Host header when FETCH_DOMAIN differs', () => {
     jest.resetModules();
     mockExecSync = jest.fn().mockReturnValue(Buffer.from(''));
     jest.doMock('child_process', () => ({ execSync: mockExecSync }));
@@ -207,7 +207,7 @@ describe('crawlPageHelper', () => {
     const wgetCall = calls[calls.length - 1];
     expect(wgetCall[0]).toContain('http://ghost_container:2368/post');
     expect(wgetCall[0]).toContain('Host: ghost.example.com');
-    expect(wgetCall[0]).toContain('--span-hosts');
-    expect(wgetCall[0]).toContain('ghost.example.com');
+    // SOURCE_DOMAIN_HOST is NOT added to --hostnames (it would restrict wpull from fetching FETCH_DOMAIN)
+    expect(wgetCall[0]).not.toContain('--span-hosts');
   });
 });

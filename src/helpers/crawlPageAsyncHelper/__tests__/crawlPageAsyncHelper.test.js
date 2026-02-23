@@ -152,7 +152,7 @@ describe('crawlPageAsyncHelper', () => {
     expect(wgetCall[0]).toContain('--plugin-script');
   });
 
-  it('should remap URL to FETCH_DOMAIN, add Host header and --span-hosts including ALT_DOMAINS hostnames', () => {
+  it('should remap URL to FETCH_DOMAIN and add Host header; no --span-hosts (plugin handles remapping)', () => {
     jest.resetModules();
     mockExec = jest.fn();
     mockExecSync = jest.fn().mockReturnValue(Buffer.from(''));
@@ -174,8 +174,7 @@ describe('crawlPageAsyncHelper', () => {
     const wgetCall = mockExec.mock.calls[0];
     expect(wgetCall[0]).toContain('http://ghost_container:2368/post');
     expect(wgetCall[0]).toContain('Host: ghost.example.com');
-    expect(wgetCall[0]).toContain('--span-hosts');
-    expect(wgetCall[0]).toContain('ghost.example.com');
-    expect(wgetCall[0]).toContain('alt.example.com');
+    // --span-hosts is not used: the plugin handles cross-domain remapping via add_child_url
+    expect(wgetCall[0]).not.toContain('--span-hosts');
   });
 });
