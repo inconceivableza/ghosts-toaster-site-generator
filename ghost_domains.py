@@ -269,10 +269,12 @@ class GhostDomainsPlugin(WpullPlugin):
                 self.logger.info(f'Not retrieving ghost admin interface url: {url}')
                 return False
             if self.fetch_domain != self.SOURCE_DOMAIN:
-                # Remap source domain URL to fetch domain for internal connection
+                # Remap source domain URL to fetch domain - add as new child and reject this URL.
+                # (Mutating item_session.request.url in accept_url is not honoured by wpull.)
                 adjusted_url = url.replace(self.SOURCE_DOMAIN, self.fetch_domain, 1)
-                item_session.request.url = adjusted_url
+                item_session.add_child_url(adjusted_url)
                 self.logger.info(f'Source domain fetch remap: {url} -> {adjusted_url}')
+                return False
             else:
                 self.logger.debug(f'Source domain detected: retrieving {url}')
             return True
@@ -286,9 +288,9 @@ class GhostDomainsPlugin(WpullPlugin):
         for alt_domain in self.ALT_DOMAINS:
             if url.startswith(alt_domain):
                 adjusted_url = url.replace(alt_domain, self.fetch_domain, 1)
-                item_session.request.url = adjusted_url
+                item_session.add_child_url(adjusted_url)
                 self.logger.info(f'Alt domain remap: {url} -> {adjusted_url}')
-                return True
+                return False
         self.logger.debug(f'No domain detected: not retrieving {url}')
         return False
 
