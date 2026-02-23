@@ -70,14 +70,14 @@ class GhostDomainsPlugin(WpullPlugin):
 
             # Replace Open Graph URLs
             content = re.sub(
-                rf'(<meta[^>]+property=["\']og:[^"\']*["\'][^>]+content=["\'])(.*?)({source_domain_search)})(.*?)(["\'][^>]*>)',
+                rf'(<meta[^>]+property=["\']og:[^"\']*["\'][^>]+content=["\'])(.*?)({source_domain_search})(.*?)(["\'][^>]*>)',
                 rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
                 content, flags=re.IGNORECASE
             )
 
             # Replace Twitter Card URLs
             content = re.sub(
-                rf'(<meta[^>]+name=["\']twitter:[^"\']*["\'][^>]+content=["\'])(.*?)({source_domain_search)})(.*?)(["\'][^>]*>)',
+                rf'(<meta[^>]+name=["\']twitter:[^"\']*["\'][^>]+content=["\'])(.*?)({source_domain_search})(.*?)(["\'][^>]*>)',
                 rf'\1\2{self.PRODUCTION_DOMAIN}\4\5',
                 content, flags=re.IGNORECASE
             )
