@@ -218,15 +218,42 @@ class GhostDomainsPlugin(WpullPlugin):
 
         return content
 
+    def _detect_encoding(self, content, content_type):
+        """Determine encoding from Content-Type charset, then XML declaration, defaulting to UTF-8."""
+        # 1. Charset parameter in the Content-Type header takes highest priority
+        if content_type:
+            charset_match = re.search(r'charset=([^\s;]+)', content_type, re.IGNORECASE)
+            if charset_match:
+                return charset_match.group(1).strip('"\'')
+        # 2. XML encoding declaration in the leading bytes (ASCII-safe scan)
+        if isinstance(content, bytes):
+            preamble = content[:200].decode('ascii', errors='replace')
+            xml_enc = re.search(r'<\?xml[^>]+encoding=["\']([^"\']+)["\']', preamble, re.IGNORECASE)
+            if xml_enc:
+                return xml_enc.group(1)
+        return 'utf-8'
+
+    def _decode_content(self, content, content_type, url):
+        """Decode bytes using the detected encoding, returning None and logging on failure."""
+        if not isinstance(content, bytes):
+            return content
+        encoding = self._detect_encoding(content, content_type)
+        try:
+            return content.decode(encoding)
+        except (UnicodeDecodeError, LookupError) as e:
+            self.logger.warning(f'Skipping transformation of {url}: could not decode as {encoding}: {e}')
+            return None
+
     def _transform_content_by_type(self, content, content_type, url):
         """Transform content based on its MIME type"""
         if not content_type:
             return content
 
-        content_str = content.decode('utf-8', errors='ignore') if isinstance(content, bytes) else content
-
-        # Determine transformation based on content type
+        # Determine transformation based on content type — decode only for known text types
         if content_type.startswith('text/html'):
+            content_str = self._decode_content(content, content_type, url)
+            if content_str is None:
+                return content
             transformed = self._transform_html_content(content_str)
             if transformed != content_str:
                 self.logger.info(f'Transformed HTML content in {url}')
@@ -236,25 +263,31 @@ class GhostDomainsPlugin(WpullPlugin):
                 self.logger.info(f'Counted production {self.PRODUCTION_DOMAIN} {content_str.count(self.PRODUCTION_DOMAIN)} -> {transformed.count(self.PRODUCTION_DOMAIN)}')
                 self.logger.info(f'Counted Toaster/TOASTER {content_str.count("Toaster")}/{content_str.count("TOASTER")} -> {transformed.count("Toaster")}/{transformed.count("TOASTER")}')
         elif content_type.startswith('text/css'):
+            content_str = self._decode_content(content, content_type, url)
+            if content_str is None:
+                return content
             transformed = self._transform_css_content(content_str)
             if transformed != content_str:
                 self.logger.info(f'Transformed CSS content in {url}')
         elif content_type.startswith(('application/javascript', 'text/javascript', 'application/x-javascript')):
+            content_str = self._decode_content(content, content_type, url)
+            if content_str is None:
+                return content
             transformed = self._transform_javascript_content(content_str)
             if transformed != content_str:
                 self.logger.info(f'Transformed JavaScript content in {url}')
-        else:
-            # Only transform known text-based content types.
-            # Binary types (images, fonts, PDFs, audio, video, wasm, etc.) must be returned
-            # unchanged — decoding them as UTF-8 with errors='ignore' drops bytes and corrupts data.
-            text_types = ('text/', 'application/json', 'application/xml',
-                          'application/xhtml', 'application/rss+xml', 'application/atom+xml')
-            if not any(content_type.startswith(t) for t in text_types):
+        elif any(content_type.startswith(t) for t in ('text/', 'application/json', 'application/xml',
+                                                       'application/xhtml', 'application/rss+xml',
+                                                       'application/atom+xml')):
+            content_str = self._decode_content(content, content_type, url)
+            if content_str is None:
                 return content
             transformed = content_str.replace(self.SOURCE_DOMAIN, self.PRODUCTION_DOMAIN)
             if self.source_domain_without_protocol and self.production_domain_without_protocol:
                 transformed = transformed.replace(f'//{self.source_domain_without_protocol}',
                                                 f'//{self.production_domain_without_protocol}')
+        else:
+            return content
 
         # Convert back to bytes if original was bytes
         if isinstance(content, bytes):
