@@ -2,15 +2,17 @@ const { exec, execSync } = require('child_process');
 const { argv } = require('yargs');
 const OPTIONS = require('../../constants/OPTIONS');
 
+let contentOnErrorFlag;
 const contentOnError = () => {
-  const contentOnErrorHelpText = execSync(
-    `${OPTIONS.MIRROR_COMMAND} --help | grep "content-on-error" || true`,
-  ).toString();
-
-  return `${contentOnErrorHelpText}`
-    .includes('content-on-error')
-    ? '--content-on-error '
-    : '';
+  if (contentOnErrorFlag === undefined) {
+    const contentOnErrorHelpText = execSync(
+      `${OPTIONS.MIRROR_COMMAND} --help | grep "content-on-error" || true`,
+    ).toString();
+    contentOnErrorFlag = `${contentOnErrorHelpText}`.includes('content-on-error')
+      ? '--content-on-error '
+      : '';
+  }
+  return contentOnErrorFlag;
 };
 
 const saveAsReferer = () => {

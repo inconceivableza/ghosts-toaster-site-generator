@@ -4,15 +4,17 @@ const OPTIONS = require('../../constants/OPTIONS');
 
 const crawlHistory = new Set();
 
+let contentOnErrorFlag;
 const contentOnError = () => {
-  const contentOnErrorHelpText = execSync(
-    `${OPTIONS.MIRROR_COMMAND} --help | grep "content-on-error" || true`,
-  ).toString();
-
-  return `${contentOnErrorHelpText}`
-    .includes('content-on-error')
-    ? '--content-on-error '
-    : '';
+  if (contentOnErrorFlag === undefined) {
+    const contentOnErrorHelpText = execSync(
+      `${OPTIONS.MIRROR_COMMAND} --help | grep "content-on-error" || true`,
+    ).toString();
+    contentOnErrorFlag = `${contentOnErrorHelpText}`.includes('content-on-error')
+      ? '--content-on-error '
+      : '';
+  }
+  return contentOnErrorFlag;
 };
 
 const saveAsReferer = () => {
