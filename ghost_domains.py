@@ -82,16 +82,18 @@ class GhostDomainsPlugin(WpullPlugin):
                 content, flags=re.IGNORECASE
             )
 
-        # Replace srcset attributes
+        # Replace srcset attributes with root-relative paths
         def replace_srcset(match):
             srcset_value = match.group(1)
             updated_srcset = []
             for source in srcset_value.split(','):
                 source = source.strip()
-                for source_domain_search in self.source_domain_searches:
-                    source = re.sub(self._escape_regex(source_domain_search), self.PRODUCTION_DOMAIN, source, flags=re.IGNORECASE)
+                # Strip full URL (with protocol) first
+                for source_url in self.SOURCE_DOMAINS:
+                    source = re.sub(self._escape_regex(source_url), '', source, flags=re.IGNORECASE)
+                # Strip protocol-relative URL (//domain)
                 source = re.sub(f'//{self._escape_regex(self.source_domain_without_protocol)}',
-                               f'//{self.production_domain_without_protocol}', source, flags=re.IGNORECASE)
+                               '', source, flags=re.IGNORECASE)
                 updated_srcset.append(source)
             return f'srcset="{", ".join(updated_srcset)}"'
 
@@ -124,91 +126,93 @@ class GhostDomainsPlugin(WpullPlugin):
         return content
 
     def _transform_css_content(self, content):
-        """Transform CSS content to replace URLs in url() functions and @import statements"""
+        """Transform CSS content to strip SOURCE_DOMAIN → root-relative paths in url() and @import"""
         if not self.SOURCE_DOMAIN or not self.PRODUCTION_DOMAIN:
             return content
 
         for source_url, source_host in zip(self.SOURCE_DOMAINS, self.source_domains):
-            # Replace URLs in url() functions
+            # Strip URLs in url() functions → root-relative /path
             content = re.sub(
                 rf'url\(\s*(["\']?)(.*?)({self._escape_regex(source_url)})(.*?)\1\s*\)',
-                rf'url(\1\2{self.PRODUCTION_DOMAIN}\4\1)',
+                rf'url(\1\2\4\1)',
                 content, flags=re.IGNORECASE
             )
 
-            # Replace protocol-relative URLs in url() functions
+            # Strip protocol-relative URLs in url() functions → root-relative /path
             content = re.sub(
                 rf'url\(\s*(["\']?)([^"\']*?)(//{self._escape_regex(source_host)})([^"\']*?)\1\s*\)',
-                rf'url(\1\2//{self.production_domain_without_protocol}\4\1)',
+                rf'url(\1\2\4\1)',
                 content, flags=re.IGNORECASE
             )
 
-            # Replace URLs in @import statements
+            # Strip URLs in @import statements → root-relative /path
             content = re.sub(
                 rf'@import\s+(["\'])(.*?)({self._escape_regex(source_url)})(.*?)\1',
-                rf'@import \1\2{self.PRODUCTION_DOMAIN}\4\1',
+                rf'@import \1\2\4\1',
                 content, flags=re.IGNORECASE
             )
 
             content = re.sub(
                 rf'@import\s+url\(\s*(["\']?)(.*?)({self._escape_regex(source_url)})(.*?)\1\s*\)',
-                rf'@import url(\1\2{self.PRODUCTION_DOMAIN}\4\1)',
+                rf'@import url(\1\2\4\1)',
                 content, flags=re.IGNORECASE
             )
 
-            # Replace protocol-relative URLs in @import statements
+            # Strip protocol-relative URLs in @import statements → root-relative /path
             content = re.sub(
                 rf'@import\s+(["\'])([^"\']*?)(//{self._escape_regex(source_host)})([^"\']*?)\1',
-                rf'@import \1\2//{self.production_domain_without_protocol}\4\1',
+                rf'@import \1\2\4\1',
                 content, flags=re.IGNORECASE
             )
 
         return content
 
     def _transform_javascript_content(self, content):
-        """Transform JavaScript content to replace URLs in variables, strings, and comments"""
+        """Transform JavaScript content to strip SOURCE_DOMAIN → root-relative paths"""
         if not self.SOURCE_DOMAIN or not self.PRODUCTION_DOMAIN:
             return content
 
         for source_url, source_host in zip(self.SOURCE_DOMAINS, self.source_domains):
-            # Replace URLs in string literals (single and double quotes)
+            # Strip URLs in string literals (single and double quotes) → root-relative
             content = re.sub(
                 rf'(["\'])(.*?)({self._escape_regex(source_url)})(.*?)\1',
-                rf'\1\2{self.PRODUCTION_DOMAIN}\4\1',
+                rf'\1\2\4\1',
                 content
             )
 
-            # Replace URLs in template literals
+            # Strip URLs in template literals → root-relative
             content = re.sub(
                 rf'(`)(.*?)({self._escape_regex(source_url)})(.*?)`',
-                rf'\1\2{self.PRODUCTION_DOMAIN}\4`',
+                rf'\1\2\4`',
                 content
             )
 
-            # Replace protocol-relative URLs in strings
+            # Strip protocol-relative URLs in strings → root-relative
             content = re.sub(
                 rf'(["\'])([^"\']*?)(//{self._escape_regex(source_host)})([^"\']*?)\1',
-                rf'\1\2//{self.production_domain_without_protocol}\4\1',
+                rf'\1\2\4\1',
                 content
             )
 
-            # Replace URLs in JavaScript object properties
+            # Strip URLs in JavaScript object properties → root-relative
             content = re.sub(
                 rf'(url|href|src)\s*:\s*(["\'])(.*?)({self._escape_regex(source_url)})(.*?)\2',
-                rf'\1: \2\3{self.PRODUCTION_DOMAIN}\5\2',
+                rf'\1: \2\3\5\2',
                 content
             )
 
-            # Replace URLs in JavaScript comments
+            # Strip URLs in JavaScript single-line comments
+            # The path after the domain is preserved (not part of the match)
             content = re.sub(
                 rf'(//.*?)({self._escape_regex(source_url)})',
-                rf'\1{self.PRODUCTION_DOMAIN}',
+                rf'\1',
                 content
             )
 
+            # Strip URLs in JavaScript multi-line comments → root-relative
             content = re.sub(
                 rf'(/\*.*?)({self._escape_regex(source_url)})(.*?\*/)',
-                rf'\1{self.PRODUCTION_DOMAIN}\3',
+                rf'\1\3',
                 content, flags=re.DOTALL
             )
 

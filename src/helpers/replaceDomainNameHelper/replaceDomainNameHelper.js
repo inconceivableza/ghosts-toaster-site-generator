@@ -4,15 +4,14 @@ const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const { compose } = require('lodash/fp');
 const OPTIONS = require('../../constants/OPTIONS');
-const replaceDomainWithUrlHelper = require('../replaceDomainWithUrlHelper');
 const replaceUrlWithSubDirPathHelper = require('../replaceUrlWithSubDirPathHelper');
 const convertDomainToRelativeHelper = require('../convertDomainToRelativeHelper');
-const removeAllUrlsHelper = require('../removeAllUrlsHelper');
 const replaceXmlUrlsHelper = require('../replaceXmlUrlsHelper');
 const replaceJavaScriptUrlsHelper = require('../replaceJavaScriptUrlsHelper');
 const replaceCssUrlsHelper = require('../replaceCssUrlsHelper');
 const replaceMetaTagsHelper = require('../replaceMetaTagsHelper');
 const replaceSrcsetHelper = require('../replaceSrcsetHelper');
+const makeUrlsRelativeHelper = require('../makeUrlsRelativeHelper');
 
 const { argv } = yargs(hideBin(process.argv));
 
@@ -35,35 +34,30 @@ const replaceDomainNameHelper = (
   // Apply content-type specific transformations based on file extension
   const fileExtension = path.extname(file).toLowerCase();
 
+  // Execution order (compose applies right-to-left, so leftmost runs last):
+  // 1. content-type helper (srcset/meta/JS/CSS) — strip SOURCE or set PRODUCTION for meta
+  // 2. makeUrlsRelativeHelper — strip remaining SOURCE_DOMAIN → root-relative /path
+  // 3. replaceUrlWithSubDirPathHelper — root-relative /path → depth-relative ./path (subDir only)
+  // 4. convertDomainToRelativeHelper — fallback for any residual domain references (subDir only)
+  // 5. replaceXmlUrlsHelper — SOURCE → PRODUCTION for XML/sitemaps
   let transformationPipeline = [
     replaceXmlUrlsHelper(file),
-    removeAllUrlsHelper,
-    replaceDomainWithUrlHelper,
     convertDomainToRelativeHelper(subDir, filePath),
-    replaceUrlWithSubDirPathHelper,
+    (output) => replaceUrlWithSubDirPathHelper(output, subDir, filePath),
+    makeUrlsRelativeHelper(file),
   ];
 
   // Add specialized transformations for specific file types
   if (fileExtension === '.html' || fileExtension === '.htm') {
-    transformationPipeline = [
-      replaceMetaTagsHelper,
-      replaceSrcsetHelper,
-      ...transformationPipeline,
-    ];
+    transformationPipeline = [...transformationPipeline, replaceMetaTagsHelper, replaceSrcsetHelper];
   }
 
   if (fileExtension === '.js') {
-    transformationPipeline = [
-      replaceJavaScriptUrlsHelper,
-      ...transformationPipeline,
-    ];
+    transformationPipeline = [...transformationPipeline, replaceJavaScriptUrlsHelper];
   }
 
   if (fileExtension === '.css') {
-    transformationPipeline = [
-      replaceCssUrlsHelper,
-      ...transformationPipeline,
-    ];
+    transformationPipeline = [...transformationPipeline, replaceCssUrlsHelper];
   }
 
   // Apply all transformations in sequence

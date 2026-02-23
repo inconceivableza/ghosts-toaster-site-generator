@@ -8,41 +8,40 @@ jest.mock('../../../constants/OPTIONS', () => ({
 
 describe('replaceJavaScriptUrlsHelper', () => {
   const sourceDomain = 'http://ghost.example.com:2368';
-  const productionDomain = 'https://www.example.com';
 
-  it('should replace URLs in double-quoted strings', () => {
+  it('should strip domain in double-quoted strings', () => {
     const input = `var apiUrl = "${sourceDomain}/api/posts";`;
-    const expected = `var apiUrl = "${productionDomain}/api/posts";`;
+    const expected = `var apiUrl = "/api/posts";`;
 
     const result = replaceJavaScriptUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in single-quoted strings', () => {
+  it('should strip domain in single-quoted strings', () => {
     const input = `var apiUrl = '${sourceDomain}/api/posts';`;
-    const expected = `var apiUrl = '${productionDomain}/api/posts';`;
+    const expected = `var apiUrl = '/api/posts';`;
 
     const result = replaceJavaScriptUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in template literals', () => {
+  it('should strip domain in template literals', () => {
     const input = `var apiUrl = \`${sourceDomain}/api/posts\`;`;
-    const expected = `var apiUrl = \`${productionDomain}/api/posts\`;`;
+    const expected = `var apiUrl = \`/api/posts\`;`;
 
     const result = replaceJavaScriptUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace protocol-relative URLs in strings', () => {
+  it('should strip protocol-relative domain in strings', () => {
     const input = `var url = "//ghost.example.com:2368/api";`;
-    const expected = `var url = "//www.example.com/api";`;
+    const expected = `var url = "/api";`;
 
     const result = replaceJavaScriptUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in object properties', () => {
+  it('should strip domain in object properties', () => {
     const input = `
       var config = {
         url: "${sourceDomain}",
@@ -52,9 +51,9 @@ describe('replaceJavaScriptUrlsHelper', () => {
     `;
     const expected = `
       var config = {
-        url: "${productionDomain}",
-        href: "${productionDomain}/post",
-        src: "${productionDomain}/image.jpg"
+        url: "",
+        href: "/post",
+        src: "/image.jpg"
       };
     `;
 
@@ -62,27 +61,24 @@ describe('replaceJavaScriptUrlsHelper', () => {
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in single-line comments', () => {
+  it('should strip domain in single-line comments', () => {
     const input = `// API endpoint: ${sourceDomain}/api`;
-    const expected = `// API endpoint: ${productionDomain}/api`;
+    const expected = `// API endpoint: /api`;
 
     const result = replaceJavaScriptUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in multi-line comments', () => {
+  it('should strip domain in multi-line comments', () => {
     const input = `
       /*
        * Base URL: ${sourceDomain}
        * Used for API calls
        */
     `;
-    const expected = `
-      /*
-       * Base URL: ${productionDomain}
-       * Used for API calls
-       */
-    `;
+    // The domain is stripped; the space before the domain is preserved as trailing whitespace
+    // Use explicit string to make the trailing space after "Base URL:" visible
+    const expected = '\n      /*\n       * Base URL: \n       * Used for API calls\n       */\n    ';
 
     const result = replaceJavaScriptUrlsHelper(input);
     expect(result).toBe(expected);
@@ -90,7 +86,7 @@ describe('replaceJavaScriptUrlsHelper', () => {
 
   it('should handle multiple URLs in the same string', () => {
     const input = `var urls = "${sourceDomain}/api ${sourceDomain}/images";`;
-    const expected = `var urls = "${productionDomain}/api ${productionDomain}/images";`;
+    const expected = `var urls = "/api /images";`;
 
     const result = replaceJavaScriptUrlsHelper(input);
     expect(result).toBe(expected);

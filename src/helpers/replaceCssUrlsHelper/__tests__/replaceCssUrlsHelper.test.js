@@ -8,67 +8,66 @@ jest.mock('../../../constants/OPTIONS', () => ({
 
 describe('replaceCssUrlsHelper', () => {
   const sourceDomain = 'http://ghost.example.com:2368';
-  const productionDomain = 'https://www.example.com';
 
-  it('should replace URLs in url() functions with double quotes', () => {
+  it('should strip domain in url() functions with double quotes', () => {
     const input = `background-image: url("${sourceDomain}/image.jpg");`;
-    const expected = `background-image: url("${productionDomain}/image.jpg");`;
+    const expected = `background-image: url("/image.jpg");`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in url() functions with single quotes', () => {
+  it('should strip domain in url() functions with single quotes', () => {
     const input = `background-image: url('${sourceDomain}/image.jpg');`;
-    const expected = `background-image: url('${productionDomain}/image.jpg');`;
+    const expected = `background-image: url('/image.jpg');`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in url() functions without quotes', () => {
+  it('should strip domain in url() functions without quotes', () => {
     const input = `background-image: url(${sourceDomain}/image.jpg);`;
-    const expected = `background-image: url(${productionDomain}/image.jpg);`;
+    const expected = `background-image: url(/image.jpg);`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace protocol-relative URLs in url() functions', () => {
+  it('should strip protocol-relative domain in url() functions', () => {
     const input = `background-image: url("//ghost.example.com:2368/image.jpg");`;
-    const expected = `background-image: url("//www.example.com/image.jpg");`;
+    const expected = `background-image: url("/image.jpg");`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in @import statements with double quotes', () => {
+  it('should strip domain in @import statements with double quotes', () => {
     const input = `@import "${sourceDomain}/styles.css";`;
-    const expected = `@import "${productionDomain}/styles.css";`;
+    const expected = `@import "/styles.css";`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in @import statements with single quotes', () => {
+  it('should strip domain in @import statements with single quotes', () => {
     const input = `@import '${sourceDomain}/styles.css';`;
-    const expected = `@import '${productionDomain}/styles.css';`;
+    const expected = `@import '/styles.css';`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace URLs in @import url() statements', () => {
+  it('should strip domain in @import url() statements', () => {
     const input = `@import url("${sourceDomain}/styles.css");`;
-    const expected = `@import url("${productionDomain}/styles.css");`;
+    const expected = `@import url("/styles.css");`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
   });
 
-  it('should replace protocol-relative URLs in @import statements', () => {
+  it('should strip protocol-relative domain in @import statements', () => {
     const input = `@import "//ghost.example.com:2368/styles.css";`;
-    const expected = `@import "//www.example.com/styles.css";`;
+    const expected = `@import "/styles.css";`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);
@@ -85,12 +84,12 @@ describe('replaceCssUrlsHelper', () => {
       }
     `;
     const expected = `
-      @import "${productionDomain}/reset.css";
+      @import "/reset.css";
       .background {
-        background-image: url("${productionDomain}/bg.jpg");
+        background-image: url("/bg.jpg");
       }
       .icon {
-        background-image: url('${productionDomain}/icon.svg');
+        background-image: url('/icon.svg');
       }
     `;
 
@@ -104,8 +103,8 @@ describe('replaceCssUrlsHelper', () => {
       background: URL("${sourceDomain}/image.jpg");
     `;
     const expected = `
-      @IMPORT "${productionDomain}/styles.css";
-      background: URL("${productionDomain}/image.jpg");
+      @IMPORT "/styles.css";
+      background: URL("/image.jpg");
     `;
 
     const result = replaceCssUrlsHelper(input);
@@ -125,7 +124,7 @@ describe('replaceCssUrlsHelper', () => {
 
   it('should handle URLs with paths and query parameters', () => {
     const input = `background-image: url("${sourceDomain}/images/bg.jpg?v=123");`;
-    const expected = `background-image: url("${productionDomain}/images/bg.jpg?v=123");`;
+    const expected = `background-image: url("/images/bg.jpg?v=123");`;
 
     const result = replaceCssUrlsHelper(input);
     expect(result).toBe(expected);

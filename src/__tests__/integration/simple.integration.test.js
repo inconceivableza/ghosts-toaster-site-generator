@@ -60,24 +60,35 @@ describe('Simple Integration Tests - No Ghost URLs Should Remain', () => {
     verifyNoGhostUrls(result, 'complete HTML page');
   });
 
-  it('should eliminate all Ghost URLs from CSS content', () => {
+  it('should eliminate all Ghost URLs from CSS content (produces root-relative paths)', () => {
     const cssContent =
       '@import "' + sourceDomain + '/fonts.css";' +
       '.header { background: url(\'' + sourceDomain + '/header.jpg\'); }' +
       '.logo { background: url(' + sourceDomain + '/logo.svg); }';
 
     const result = replaceCssUrlsHelper(cssContent);
-    verifyNoGhostUrls(result, 'CSS content');
+
+    // CSS helper now strips SOURCE_DOMAIN → root-relative (no PRODUCTION_DOMAIN)
+    const ghostUrlRegex = new RegExp(sourceDomain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    expect(result.match(ghostUrlRegex)).toBe(null);
+    expect(result).toContain('@import "/fonts.css"');
+    expect(result).toContain("url('/header.jpg')");
+    expect(result).toContain('url(/logo.svg)');
   });
 
-  it('should eliminate all Ghost URLs from JavaScript content', () => {
+  it('should eliminate all Ghost URLs from JavaScript content (produces root-relative paths)', () => {
     const jsContent =
       'var config = { url: "' + sourceDomain + '", api: \'' + sourceDomain + '/api/\' };' +
       'var imageUrl = "' + sourceDomain + '/image.jpg";' +
       '// Base URL: ' + sourceDomain;
 
     const result = replaceJavaScriptUrlsHelper(jsContent);
-    verifyNoGhostUrls(result, 'JavaScript content');
+
+    // JS helper now strips SOURCE_DOMAIN → root-relative (no PRODUCTION_DOMAIN)
+    const ghostUrlRegex = new RegExp(sourceDomain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+    expect(result.match(ghostUrlRegex)).toBe(null);
+    expect(result).toContain("api: '/api/'");
+    expect(result).toContain('var imageUrl = "/image.jpg"');
   });
 
   it('should handle problematic patterns that have caused issues', () => {

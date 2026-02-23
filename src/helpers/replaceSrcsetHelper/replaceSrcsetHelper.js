@@ -1,7 +1,7 @@
 const OPTIONS = require('../../constants/OPTIONS');
 
 /**
- * Replaces URLs in srcset attributes for responsive images.
+ * Strips SOURCE_DOMAIN from srcset/data-srcset attributes to produce root-relative URLs.
  * Handles complex srcset syntax with multiple URLs and descriptors.
  */
 const replaceSrcsetHelper = (output) => {
@@ -10,9 +10,7 @@ const replaceSrcsetHelper = (output) => {
   }
 
   const sourceDomain = OPTIONS.SOURCE_DOMAIN;
-  const productionDomain = OPTIONS.PRODUCTION_DOMAIN;
   const sourceDomainWithoutProtocol = sourceDomain.replace(/^https?:\/\//, '');
-  const productionDomainWithoutProtocol = productionDomain.replace(/^https?:\/\//, '');
 
   let result = output;
 
@@ -22,8 +20,8 @@ const replaceSrcsetHelper = (output) => {
     /(srcset)=(["'])([^"']+)\2/gi,
     (match, attr, quote, srcsetValue) => {
       const updatedSrcset = srcsetValue
-        .replace(new RegExp(escapeRegex(sourceDomain), 'gi'), productionDomain)
-        .replace(new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'), `//${productionDomainWithoutProtocol}`);
+        .replace(new RegExp(escapeRegex(sourceDomain), 'gi'), '')
+        .replace(new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'), '');
       return `${attr}=${quote}${updatedSrcset}${quote}`;
     }
   );
@@ -33,8 +31,8 @@ const replaceSrcsetHelper = (output) => {
     /(data-srcset)=(["'])([^"']+)\2/gi,
     (match, attr, quote, srcsetValue) => {
       const updatedSrcset = srcsetValue
-        .replace(new RegExp(escapeRegex(sourceDomain), 'gi'), productionDomain)
-        .replace(new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'), `//${productionDomainWithoutProtocol}`);
+        .replace(new RegExp(escapeRegex(sourceDomain), 'gi'), '')
+        .replace(new RegExp(`//${escapeRegex(sourceDomainWithoutProtocol)}`, 'gi'), '');
       return `${attr}=${quote}${updatedSrcset}${quote}`;
     }
   );
