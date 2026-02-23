@@ -57,7 +57,7 @@ const crawlPageAsyncHelper = (
   const env = { ...process.env, SOURCE_DOMAIN: OPTIONS.SOURCE_DOMAIN, PRODUCTION_DOMAIN: OPTIONS.PRODUCTION_DOMAIN, ALT_DOMAINS: OPTIONS.ALT_DOMAINS, FETCH_DOMAIN: OPTIONS.FETCH_DOMAIN };
 
   try {
-    console.log(`Fetching: ${url}`);
+    console.log(`Fetching: ${fetchUrl !== url ? `${url} -> ${fetchUrl}` : url}`);
     exec(
       wgetCommand,
       { env },

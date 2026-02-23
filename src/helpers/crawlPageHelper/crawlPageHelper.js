@@ -54,7 +54,7 @@ const crawlPageHelper = (url) => {
     + `${fetchUrl}`;
 
   try {
-    console.log(`Fetching: ${url}`);
+    console.log(`Fetching: ${fetchUrl !== url ? `${url} -> ${fetchUrl}` : url}`);
     // Pass SOURCE_DOMAIN, PRODUCTION_DOMAIN, ALT_DOMAINS and FETCH_DOMAIN to the wpull ghost_domains plugin
     const env = { ...process.env, SOURCE_DOMAIN: OPTIONS.SOURCE_DOMAIN, PRODUCTION_DOMAIN: OPTIONS.PRODUCTION_DOMAIN, ALT_DOMAINS: OPTIONS.ALT_DOMAINS, FETCH_DOMAIN: OPTIONS.FETCH_DOMAIN };
     execSync(
